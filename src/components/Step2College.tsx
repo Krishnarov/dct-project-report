@@ -2,7 +2,7 @@ import { useState, ChangeEvent } from "react";
 
 interface CollegeForm {
   collegeName: string;
-  collegeLogo: { url: string; public_id: string };
+  collegeLogo?: { url: string; public_id: string }; // <-- optional
   TeacherName: string;
   course: string;
   branch: string;
@@ -48,10 +48,7 @@ export default function Step2College({ onNext }: Props) {
   };
 
   const isFormValid =
-    form.collegeName &&
-    form.TeacherName &&
-    form.course &&
-    form.session;
+    form.collegeName && form.TeacherName && form.course && form.session;
 
   const handleSubmit = async () => {
     setUploading(true);
@@ -74,14 +71,14 @@ export default function Step2College({ onNext }: Props) {
 
       onNext({
         ...form,
-        collegeLogo: logoData,
+        collegeLogo: logoData || { url: "", public_id: "" },
       });
     } catch (err) {
       console.error(err);
       alert("Image upload failed");
-    } 
+    }
   };
-  
+
   const removeDiagram = (type: "collegeLogo") => {
     setPreviewImage(null);
     setForm((prev) => ({ ...prev, [type]: null }));
@@ -211,40 +208,41 @@ export default function Step2College({ onNext }: Props) {
             </select>
           </div>
         </div>
-         {form.course === "MCA" || form.course === "BCA" ? "":(
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Branch <span className="text-red-500">*</span>
-          </label>
-         
-          <select
-            required
-            name="branch"
-            value={form.branch}
-            onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiAjdjEwMTExNCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNoZXZyb24tZG93biI+PHBhdGggZD0ibTYgOSA2IDYgNi02Ii8+PC9zdmc+')] bg-no-repeat bg-[center_right_1rem]"
-          >
-            <option value="">Select Branch</option>
-            <option value="Computer Science and Engineering">
-              Computer Science and Engineering
-            </option>
-            <option value="Information Technology">
-              Information Technology
-            </option>
-            <option value="Electronic Communication">
-              Electronic Communication
-            </option>
-            <option value="Electrical Engineering">
-              Electrical Engineering
-            </option>
-            <option value="Post Graduate Diploma in Computer Application">
-              PG Diploma in Computer Application
-            </option>
-            <option value="Other">Other</option>
-          </select>
-       
-        </div>
-   )}
+        {form.course === "MCA" || form.course === "BCA" ? (
+          ""
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Branch <span className="text-red-500">*</span>
+            </label>
+
+            <select
+              required
+              name="branch"
+              value={form.branch}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiAjdjEwMTExNCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNoZXZyb24tZG93biI+PHBhdGggZD0ibTYgOSA2IDYgNi02Ii8+PC9zdmc+')] bg-no-repeat bg-[center_right_1rem]"
+            >
+              <option value="">Select Branch</option>
+              <option value="Computer Science and Engineering">
+                Computer Science and Engineering
+              </option>
+              <option value="Information Technology">
+                Information Technology
+              </option>
+              <option value="Electronic Communication">
+                Electronic Communication
+              </option>
+              <option value="Electrical Engineering">
+                Electrical Engineering
+              </option>
+              <option value="Post Graduate Diploma in Computer Application">
+                PG Diploma in Computer Application
+              </option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Academic Session <span className="text-red-500">*</span>
@@ -275,7 +273,7 @@ export default function Step2College({ onNext }: Props) {
               : "bg-gray-400 cursor-not-allowed"
           }`}
       >
-       {uploading ? (
+        {uploading ? (
           <span className="flex items-center justify-center gap-2">
             Saving...
             <svg
@@ -316,7 +314,6 @@ export default function Step2College({ onNext }: Props) {
             </svg>
           </span>
         )}
-
       </button>
     </div>
   );

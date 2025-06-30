@@ -8,8 +8,48 @@ export default function EditStudentPage() {
   const params = useParams();
   const router = useRouter();
   const studentId = params.id as string;
-
-  const [form, setForm] = useState<any>(null);
+  interface PersonalDetails {
+    name?: string;
+    enrollmentNumber?: string;
+    email?: string;
+    phone?: string;
+    // ...aur fields agar hain
+  }
+  interface CollegeInfo {
+    collegeName?: string;
+    TeacherName?: string;
+    course?: string;
+    branch?: string;
+    session?: string;
+    collegeLogo?: { url?: string; public_id?: string; name?: string };
+  }
+  interface ProjectDetails {
+    projectName?: string;
+    projectTitle?: string;
+    TrainingType?: string;
+    TeamName?: string;
+    StartDate?: string;
+    EndDate?: string;
+    backendTechnology?: string;
+    frontendTechnology?: string;
+    database?: string;
+    duration?: string;
+  }
+  interface ProjectAssets {
+    projectCode?: string[];
+    dfdDiagram?: { url?: string; public_id?: string; name?: string };
+    erDiagram?: { url?: string; public_id?: string; name?: string };
+    uiScreenshots?: { url?: string; public_id?: string; name?: string }[];
+  }
+  interface StudentFormType {
+    personalDetails?: PersonalDetails;
+    collegeInfo?: CollegeInfo;
+    projectDetails?: ProjectDetails;
+    projectAssets?: ProjectAssets;
+    status?: string;
+    // ...aur fields agar hain
+  }
+  const [form, setForm] = useState<StudentFormType | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,90 +72,76 @@ export default function EditStudentPage() {
       const indexMatch = name.match(/\[(\d+)\]/);
       if (indexMatch) {
         const index = parseInt(indexMatch[1]);
-        setForm((prev) => ({
-          ...prev,
-          projectAssets: {
-            ...prev.projectAssets,
-            projectCode: prev.projectAssets.projectCode.map(
-              (item: string, i: number) => (i === index ? value : item)
-            ),
-          },
-        }));
+        setForm((prev: any) => {
+          const safePrev = prev || {};
+          const safeProjectAssets = safePrev.projectAssets || {};
+          const safeProjectCode = Array.isArray(safeProjectAssets.projectCode)
+            ? safeProjectAssets.projectCode
+            : ["", "", "", "", ""]; // ya jitne bhi code slots chahiye
+
+          return {
+            ...safePrev,
+            projectAssets: {
+              ...safeProjectAssets,
+              projectCode: safeProjectCode.map((item: string, i: number) =>
+                i === index ? value : item
+              ),
+            },
+          };
+        });
         return;
       }
     }
 
     if (name.startsWith("personalDetails.")) {
-      setForm({
-        ...form,
+      setForm((prev: any) => ({
+        ...(prev || {}),
         personalDetails: {
-          ...form.personalDetails,
+          ...(prev?.personalDetails || {}),
           [name.split(".")[1]]: value,
         },
-      });
+      }));
     } else if (name.startsWith("collegeInfo.")) {
-      setForm({
-        ...form,
-        collegeInfo: { ...form.collegeInfo, [name.split(".")[1]]: value },
-      });
+      setForm((prev: any) => ({
+        ...(prev || {}),
+        collegeInfo: {
+          ...(prev?.collegeInfo || {}),
+          [name.split(".")[1]]: value,
+        },
+      }));
     } else if (name.startsWith("projectDetails.")) {
-      setForm({
-        ...form,
-        projectDetails: { ...form.projectDetails, [name.split(".")[1]]: value },
-      });
+      setForm((prev: any) => ({
+        ...(prev || {}),
+        projectDetails: {
+          ...(prev?.projectDetails || {}),
+          [name.split(".")[1]]: value,
+        },
+      }));
     } else if (name.startsWith("projectAssets.")) {
-      setForm({
-        ...form,
-        projectAssets: { ...form.projectAssets, [name.split(".")[1]]: value },
-      });
+      setForm((prev: any) => ({
+        ...(prev || {}),
+        projectAssets: {
+          ...(prev?.projectAssets || {}),
+          [name.split(".")[1]]: value,
+        },
+      }));
     } else {
-      setForm({ ...form, [name]: value });
+      setForm((prev: any) => ({
+        ...(prev || {}),
+        [name]: value,
+      }));
     }
   };
-
   const handleFileUpload = async (
-  e: ChangeEvent<HTMLInputElement>,
-  field: string
-) => {
-  if (e.target.files && e.target.files[0]) {
-    const file = e.target.files[0];
+    e: ChangeEvent<HTMLInputElement>,
+    field: string
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", field); // dynamic folder name
-
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-
-    setForm({
-      ...form,
-      projectAssets: {
-        ...form.projectAssets,
-        [field]: {
-          url: data.url,
-          public_id: data.public_id,
-          name: data.original_filename,
-        },
-      },
-    });
-  }
-};
-
-const handleMultipleFileUpload = async (
-  e: ChangeEvent<HTMLInputElement>,
-  field: string
-) => {
-  if (e.target.files) {
-    const files = Array.from(e.target.files);
-
-    const uploadPromises = files.map(async (file) => {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("folder", field);
+      formData.append("folder", field); // dynamic folder name
 
       const res = await fetch("/api/upload", {
         method: "POST",
@@ -123,49 +149,90 @@ const handleMultipleFileUpload = async (
       });
 
       const data = await res.json();
-      return {
-        url: data.url,
-        public_id: data.public_id,
-        name: data.original_filename,
-      };
-    });
 
-    const uploadedFiles = await Promise.all(uploadPromises);
+      setForm((prev: any) => ({
+        ...(prev || {}),
+        projectAssets: {
+          ...(prev?.projectAssets || {}),
+          [field]: {
+            url: data.url,
+            public_id: data.public_id,
+            name: data.original_filename,
+          },
+        },
+      }));
+    }
+  };
 
-    setForm({
-      ...form,
-      projectAssets: {
-        ...form.projectAssets,
-        [field]: [...(form.projectAssets[field] || []), ...uploadedFiles],
-      },
-    });
-  }
-};
+  const handleMultipleFileUpload = async (
+    e: ChangeEvent<HTMLInputElement>,
+    field: string
+  ) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
 
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", field);
 
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+        return {
+          url: data.url,
+          public_id: data.public_id,
+          name: data.original_filename,
+        };
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+
+      setForm((prev: any) => ({
+        ...(prev || {}),
+        projectAssets: {
+          ...(prev?.projectAssets || {}),
+          [field]: [
+            ...((prev?.projectAssets?.[field] as any[]) || []),
+            ...uploadedFiles,
+          ],
+        },
+      }));
+    }
+  };
 
   const removeAsset = (field: string, index?: number) => {
-    if (typeof index === "number") {
-      // Remove specific item from array (for screenshots)
-      const updatedAssets = [...form.projectAssets[field]];
-      updatedAssets.splice(index, 1);
-      setForm({
-        ...form,
-        projectAssets: {
-          ...form.projectAssets,
-          [field]: updatedAssets,
-        },
-      });
-    } else {
-      // Remove single asset (for diagrams)
-      setForm({
-        ...form,
-        projectAssets: {
-          ...form.projectAssets,
-          [field]: null,
-        },
-      });
-    }
+    setForm((prev: any) => {
+      const safePrev = prev || {};
+      const safeProjectAssets = safePrev.projectAssets || {};
+
+      if (typeof index === "number") {
+        // Remove specific item from array (for screenshots)
+        const currentAssets = Array.isArray(safeProjectAssets[field])
+          ? [...safeProjectAssets[field]]
+          : [];
+        currentAssets.splice(index, 1);
+        return {
+          ...safePrev,
+          projectAssets: {
+            ...safeProjectAssets,
+            [field]: currentAssets,
+          },
+        };
+      } else {
+        // Remove single asset (for diagrams)
+        return {
+          ...safePrev,
+          projectAssets: {
+            ...safeProjectAssets,
+            [field]: null,
+          },
+        };
+      }
+    });
   };
 
   const handleSubmit = async () => {
@@ -192,38 +259,37 @@ const handleMultipleFileUpload = async (
       };
 
       const uploadMultipleFiles = async (
-  files: Array<{ url: string; name: string }>,
-  folder: string
-) => {
-  const newFiles = files.filter((file) => file.url.startsWith("data:"));
-  const existingFiles = files.filter(
-    (file) => !file.url.startsWith("data:")
-  );
+        files: Array<{ url: string; name: string }>,
+        folder: string
+      ) => {
+        const newFiles = files.filter((file) => file.url.startsWith("data:"));
+        const existingFiles = files.filter(
+          (file) => !file.url.startsWith("data:")
+        );
 
-  if (newFiles.length === 0) return files;
+        if (newFiles.length === 0) return files;
 
-  const uploadPromises = newFiles.map(async (file) => {
-    const formData = new FormData();
-    const blob = await (await fetch(file.url)).blob();
-    formData.append("file", blob, file.name);
-    formData.append("folder", folder);
+        const uploadPromises = newFiles.map(async (file) => {
+          const formData = new FormData();
+          const blob = await (await fetch(file.url)).blob();
+          formData.append("file", blob, file.name);
+          formData.append("folder", folder);
 
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await response.json();
-    return {
-      url: data.url,
-      name: data.original_filename,
-      public_id: data.public_id,
-    };
-  });
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await response.json();
+          return {
+            url: data.url,
+            name: data.original_filename,
+            public_id: data.public_id,
+          };
+        });
 
-  const uploadedFiles = await Promise.all(uploadPromises);
-  return [...existingFiles, ...uploadedFiles];
-};
-
+        const uploadedFiles = await Promise.all(uploadPromises);
+        return [...existingFiles, ...uploadedFiles];
+      };
 
       // Upload college logo if it's new
       if (formData.collegeInfo?.collegeLogo) {
@@ -278,7 +344,6 @@ const handleMultipleFileUpload = async (
         Loading...
       </div>
     );
-  console.log(form);
 
   return (
     <div className="max-w-7xl mx-auto p-5 space-y-6">
@@ -299,7 +364,7 @@ const handleMultipleFileUpload = async (
                 </label>
                 <input
                   name="personalDetails.name"
-                  value={form.personalDetails?.name || ""}
+                  value={form?.personalDetails?.name || ""}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
@@ -851,40 +916,42 @@ const handleMultipleFileUpload = async (
               UI Screenshots
             </h2>
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition-colors cursor-pointer">
-              {form.projectAssets?.uiScreenshots?.length > 0 ? (
+              {(form?.projectAssets?.uiScreenshots?.length ?? 0) > 0 ? (
                 <div className="grid grid-cols-3 gap-2 w-full">
-                  {form.projectAssets.uiScreenshots.map((screenshot, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={screenshot.url}
-                        alt={`Screenshot ${index + 1}`}
-                        className="h-24 w-full object-cover rounded"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            removeAsset("uiScreenshots", index);
-                          }}
-                          className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                          title="Remove image"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
+                  {form?.projectAssets?.uiScreenshots?.map(
+                    (screenshot, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={screenshot.url}
+                          alt={`Screenshot ${index + 1}`}
+                          className="h-24 w-full object-cover rounded"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              removeAsset("uiScreenshots", index);
+                            }}
+                            className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                            title="Remove image"
                           >
-                            <path
-                              fillRule="evenodd"
-                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded h-24 cursor-pointer hover:border-blue-500 transition-colors">
                     <svg
                       className="w-6 h-6 text-gray-400"

@@ -1,11 +1,17 @@
 import connectDB from "@/lib/db";
 import StudentForm from "@/models/StudentForm";
 import { NextRequest } from "next/server";
+type RouteParams = {
+  params: Promise<{ id: string }>;
+};
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  context: RouteParams
+) {
+  const { id } = await context.params;
   await connectDB();
-  const { id } = params;
-  const { status } = await req.json();
+  const { status } = await request.json();
 
   if (!["new", "accept", "reject"].includes(status)) {
     return Response.json({ message: "Invalid status" }, { status: 400 });

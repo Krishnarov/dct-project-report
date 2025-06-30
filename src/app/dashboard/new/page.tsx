@@ -4,20 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import LoginPage from "@/components/login";
 import DataTable from "@/components/DataTable";
-interface Student {
-  _id: string;
-  personalDetails?: {
-    name: string;
-    email: string;
-    phone: string;
-    enrollmentNumber?: string;
-  };
-  status?: string;
-}
+// interface Student {
+//   _id: string;
+//   personalDetails?: {
+//     name: string;
+//     email: string;
+//     phone: string;
+//     enrollmentNumber?: string;
+//   };
+//   status?: string;
+// }
 
 export default function NewStudent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activePage, setActivePage] = useState("dashboard");
+
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn");

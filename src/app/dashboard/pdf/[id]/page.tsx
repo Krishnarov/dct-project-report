@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
+
 interface Student {
   id: string;
   personalDetails?: {
@@ -61,7 +62,7 @@ export default function PDFPage() {
       .catch((err) => console.log(err));
   }, [studentId]);
 
-    const handlePrint = () => {
+  const handlePrint = () => {
     // Enhanced print-specific styles with proper page breaks
     const printStyles = `
     @media print {
@@ -123,9 +124,12 @@ export default function PDFPage() {
       document.head.removeChild(styleElement);
     }, 1000);
   };
-
-  const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  console.log(student);
+  const [changeApi, setChangeApi] = useState(false);
+  const api = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const api1 = process.env.NEXT_PUBLIC_GEMINI_API_KEY1;
+  const GEMINI_API_KEY = changeApi ? api1 : api;
+  console.log("GEMINI_API_KEY:", GEMINI_API_KEY);
+  
 
   const [content, setContent] = useState({
     introduction: "",
@@ -142,9 +146,9 @@ export default function PDFPage() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(2);
   const [isdisabled, setisdisabled] = useState(true);
-console.log(progress);
+  console.log(progress);
 
- const getPromptTemplates = (student) => {
+  const getPromptTemplates = (student: Student) => {
     const {
       projectTitle,
       projectName,
@@ -287,7 +291,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
   };
 
   // Optimized content generation with better error handling
-  const generateContent = async (section, prompt) => {
+  const generateContent = async (section: string, prompt: string) => {
     try {
       const requestData = {
         contents: [
@@ -391,12 +395,13 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
 
   // Optional: Add retry mechanism
   const retryFailedSections = async () => {
+    setChangeApi(!changeApi);
     const failedSections = Object.entries(content)
       .filter(([key, value]) => value.includes("Error generating"))
       .map(([key]) => key);
 
     if (failedSections.length === 0) return;
-
+    if (!student) return;
     const sections = getPromptTemplates(student);
     const retryPromises = failedSections.map((sectionKey) => {
       const section = sections.find((s) => s.key === sectionKey);
@@ -407,7 +412,6 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
 
     await Promise.all(retryPromises);
   };
-
   const handleDownload = async () => {
     const content = pdfRef.current;
     if (!content) {
@@ -417,10 +421,10 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
 
     try {
       // Dynamically import html2pdf.js to avoid SSR issues
-      const html2pdf = (await import("html2pdf.js")).default;
+      const html2pdf = (await import("html2pdf.js" as any)).default;
 
       // Clone the content to avoid modifying the original
-      const clonedContent = content.cloneNode(true);
+      const clonedContent = content.cloneNode(true) as HTMLElement;
 
       // Remove any elements that shouldn't be in PDF
       const buttonsToRemove = clonedContent.querySelectorAll("button");
@@ -465,46 +469,59 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
     }
   };
 
-useEffect(() => {
-  if (progress === 100) {
-    setisdisabled(false);
-  }
-}, [progress]);
+  useEffect(() => {
+    if (progress === 100) {
+      setisdisabled(false);
+    }
+  }, [progress]);
 
-
-  if (!student) return <div className="p-5">Loading...</div>;
-
-  console.log(content);
+  if (!student)
+    return (
+      <div className="p-5 flex justify-center h-screen items-center">
+        Loading...
+      </div>
+    );
 
   return (
     <div className="p-5 space-y-4 ">
-      <span className={`  h-1 shadow-indigo-400 shadow bg-indigo-500 absolute top-0 left-0`}   style={{ width: `${progress}%` }}></span>
+      <span
+        className={`  h-1 shadow-indigo-400 shadow bg-indigo-500 absolute top-0 left-0`}
+        style={{ width: `${progress}%` }}
+      ></span>
       <div className="flex justify-center">
         <div className="space-x-2 mb-4">
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/dashboard"); // ya "/" ya koi bhi default route
+              }
+            }}
             className="bg-gray-500 text-white px-4 py-2 rounded"
           >
             Back
           </button>
           <button
             onClick={handlePrint}
-             disabled={isdisabled}
-            className={`bg-blue-500 text-white px-4 py-2 rounded  ${isdisabled ? 'bg-gray-400 cursor-not-allowed' : 'primary'}`}
+            disabled={isdisabled}
+            className={`bg-blue-500 text-white px-4 py-2 rounded  ${
+              isdisabled ? "bg-gray-400 cursor-not-allowed" : "primary"
+            }`}
           >
             Print
           </button>
-          <button
+          {/* <button
             onClick={handleDownload}
             className="bg-green-500 text-white px-4 py-2 rounded"
           >
             Download PDF
-          </button>
+          </button> */}
           <button
             onClick={retryFailedSections}
             className="bg-green-500 text-white px-4 py-2 rounded"
           >
-            retryFailedSections{" "}
+            {loading ? "Retrying..." : "Retry Failed Sections"}
           </button>
         </div>
       </div>
@@ -530,15 +547,15 @@ useEffect(() => {
           <p className="mb-8">
             Submitted in Partial fulfillment for the award of
             <br />
-            {student.collegeInfo.course === "MCA" &&
+            {student.collegeInfo?.course === "MCA" &&
               "Master of Computer Applications"}
-            {student.collegeInfo.course === "BCA" &&
+            {student.collegeInfo?.course === "BCA" &&
               "Bachelor of Computer Applications"}
-            {student.collegeInfo.course !== "MCA" &&
-              student.collegeInfo.course !== "BCA" && (
-                <>{student.collegeInfo.course} in </>
+            {student.collegeInfo?.course !== "MCA" &&
+              student.collegeInfo?.course !== "BCA" && (
+                <>{student.collegeInfo?.course} in </>
               )}
-            {student.collegeInfo.branch}
+            {student.collegeInfo?.branch}
           </p>
 
           <p className="font-bold mb-8 text-xl">
@@ -556,10 +573,10 @@ useEffect(() => {
               />
             </div>
 
-            {student.collegeInfo.collegeLogo.url && (
+            {student.collegeInfo?.collegeLogo?.url && (
               <div>
                 <img
-                  src={student.collegeInfo.collegeLogo.url}
+                  src={student.collegeInfo?.collegeLogo?.url}
                   alt="Logo"
                   width={150}
                   height={100}
@@ -576,12 +593,12 @@ useEffect(() => {
             </div>
             <div className="mb-8 p-4 border-2 border-sky-400 w-64">
               <p className="font-bold">Submitted to</p>
-              <p>Er. {student.collegeInfo.TeacherName}</p>
+              <p>Er. {student.collegeInfo?.TeacherName}</p>
               <p>College Hod </p>
             </div>
           </div>
 
-          <p className="mb-8">Session - {student.collegeInfo.session}</p>
+          <p className="mb-8">Session - {student.collegeInfo?.session}</p>
 
           <p className="font-bold text-2xl px-20">
             {student.collegeInfo?.collegeName}
@@ -593,7 +610,7 @@ useEffect(() => {
             </div>
             <div className="mt-10">
               <p className="font-bold">Submitted to:</p>
-              <p>{student.collegeInfo.TeacherName}</p>
+              <p>{student.collegeInfo?.TeacherName}</p>
             </div>
           </div>
         </div>
@@ -616,19 +633,19 @@ useEffect(() => {
 
           <p className="mb-4 text-justify">
             This is to certify that the project work titled "
-            <strong>{student.projectDetails.projectTitle}</strong>" has been
+            <strong>{student.projectDetails?.projectTitle}</strong>" has been
             successfully completed by{" "}
             <strong>{student.personalDetails?.name}</strong> under my
             supervision and guidance
           </p>
           <p className="mb-4 text-justify">
             This project is a bonafide piece of work carried out by the student
-            during the academic year {student.collegeInfo.session} as part of
+            during the academic year {student.collegeInfo?.session} as part of
             the{" "}
             <strong>
               {" "}
-              {student.projectDetails.duration}{" "}
-              {student.projectDetails.TrainingType}{" "}
+              {student.projectDetails?.duration}{" "}
+              {student.projectDetails?.TrainingType}{" "}
             </strong>{" "}
             program at <strong> DigiCoders Technologies Pvt Ltd.</strong>
           </p>
@@ -643,15 +660,15 @@ useEffect(() => {
             This project is submitted in partial fulfillment of the requirements
             for the{" "}
             <strong>
-              {student.collegeInfo.course === "MCA" &&
+              {student.collegeInfo?.course === "MCA" &&
                 "Master of Computer Applications"}
-              {student.collegeInfo.course === "BCA" &&
+              {student.collegeInfo?.course === "BCA" &&
                 "Bachelor of Computer Applications"}
-              {student.collegeInfo.course !== "MCA" &&
-                student.collegeInfo.course !== "BCA" && (
-                  <>{student.collegeInfo.course} in </>
+              {student.collegeInfo?.course !== "MCA" &&
+                student.collegeInfo?.course !== "BCA" && (
+                  <>{student.collegeInfo?.course} in </>
                 )}
-              {student.collegeInfo.branch}
+              {student.collegeInfo?.branch}
             </strong>{" "}
             from <strong>{student.collegeInfo?.collegeName}.</strong>
             {/* Diploma in Computer Science & Engineering from Mahamaya
@@ -689,16 +706,16 @@ useEffect(() => {
           </p>
           <p className="mt-2 ">
             <strong>Department:</strong>{" "}
-            {student.collegeInfo.course === "MCA" &&
+            {student.collegeInfo?.course === "MCA" &&
               "Master of Computer Applications"}
-            {student.collegeInfo.course === "BCA" &&
+            {student.collegeInfo?.course === "BCA" &&
               "Bachelor of Computer Applications"}
-            {student.collegeInfo.course === "MCA" && "BCA"
+            {student.collegeInfo?.course === "MCA" && "BCA"
               ? ""
-              : student.collegeInfo.branch}
+              : student.collegeInfo?.branch}
           </p>
           <p className="mt-2 ">
-            <strong>Academic Year:</strong> {student.collegeInfo.session}
+            <strong>Academic Year:</strong> {student.collegeInfo?.session}
           </p>
         </div>
 
@@ -720,7 +737,7 @@ useEffect(() => {
 
           <p className="mb-4 text-justify">
             This is to certify that the project titled “
-            <strong>{student.projectDetails.projectTitle}</strong>” has been
+            <strong>{student.projectDetails?.projectTitle}</strong>” has been
             successfully completed by{" "}
             <strong>{student.personalDetails?.name}</strong>, under the
             technical guidance and project development support of{" "}
@@ -733,13 +750,13 @@ useEffect(() => {
             project carried out in the field of Computer Science & Engineering.
             The project meets the academic and technical standards required for
             submission towards the fulfillment of the{" "}
-            {student.collegeInfo.course === "MCA" &&
+            {student.collegeInfo?.course === "MCA" &&
               "Master of Computer Applications"}
-            {student.collegeInfo.course === "BCA" &&
+            {student.collegeInfo?.course === "BCA" &&
               "Bachelor of Computer Applications"}
-            {student.collegeInfo.course === "MCA" && "BCA"
+            {student.collegeInfo?.course === "MCA" && "BCA"
               ? ""
-              : student.collegeInfo.branch}
+              : student.collegeInfo?.branch}
             .
           </p>
           <p className="mb-4 text-justify">
@@ -807,17 +824,17 @@ useEffect(() => {
 
           <p className="mb-4 text-justify">
             I hereby declare that the work presented in this Minor Project
-            titled “<strong>{student.projectDetails.projectTitle}</strong>” is
+            titled “<strong>{student.projectDetails?.projectTitle}</strong>” is
             the result of my own effort and is an original contribution to the
             field of{" "}
             <strong>
-              {student.collegeInfo.course === "MCA" &&
+              {student.collegeInfo?.course === "MCA" &&
                 "Master of Computer Applications"}
-              {student.collegeInfo.course === "BCA" &&
+              {student.collegeInfo?.course === "BCA" &&
                 "Bachelor of Computer Applications"}
-              {student.collegeInfo.course === "MCA" && "BCA"
+              {student.collegeInfo?.course === "MCA" && "BCA"
                 ? ""
-                : student.collegeInfo.branch}
+                : student.collegeInfo?.branch}
               .
             </strong>
           </p>
@@ -826,13 +843,13 @@ useEffect(() => {
             requirements for the{" "}
             <strong>
               {" "}
-              {student.collegeInfo.course === "MCA" &&
+              {student.collegeInfo?.course === "MCA" &&
                 "Master of Computer Applications"}
-              {student.collegeInfo.course === "BCA" &&
+              {student.collegeInfo?.course === "BCA" &&
                 "Bachelor of Computer Applications"}{" "}
-              {student.collegeInfo.course === "MCA" && "BCA"
+              {student.collegeInfo?.course === "MCA" && "BCA"
                 ? ""
-                : `${student.collegeInfo.course} in ${student.collegeInfo.branch}`}{" "}
+                : `${student.collegeInfo?.course} in ${student.collegeInfo?.branch}`}{" "}
             </strong>{" "}
             at <strong>{student.collegeInfo?.collegeName}.</strong> To the best
             of my knowledge, the content of this project is authentic, accurate,
@@ -908,16 +925,16 @@ useEffect(() => {
 
           <p className="mb-4 text-justify">
             I extend my heartfelt gratitude to{" "}
-            <strong> {student.collegeInfo.TeacherName}</strong>, Head of the
+            <strong> {student.collegeInfo?.TeacherName}</strong>, Head of the
             Department of{" "}
             <strong>
-              {student.collegeInfo.course === "MCA" &&
+              {student.collegeInfo?.course === "MCA" &&
                 "Master of Computer Applications"}
-              {student.collegeInfo.course === "BCA" &&
+              {student.collegeInfo?.course === "BCA" &&
                 "Bachelor of Computer Applications"}
-              {student.collegeInfo.course === "MCA" && "BCA"
+              {student.collegeInfo?.course === "MCA" && "BCA"
                 ? ""
-                : student.collegeInfo.branch}
+                : student.collegeInfo?.branch}
               , {student.collegeInfo?.collegeName},{" "}
             </strong>
             for his constant guidance, motivation, and valuable suggestions at
@@ -935,7 +952,6 @@ useEffect(() => {
             consistent mentorship, motivation, and insightful feedback, which
             helped me overcome challenges and guided me in the right direction.
           </p>
-
 
           <p className="mt-10 text-justify">
             <strong>Project Guide/Supervisor</strong>
@@ -1149,7 +1165,11 @@ useEffect(() => {
             <h2 className="texl-sm font-black">3.3 ER Diagram</h2>
             <div className="flex justify-center">
               <img
-                src={student.projectAssets.erDiagram.url?student.projectAssets.erDiagram.url:"/img/erdigram.png"}
+                src={
+                  student.projectAssets?.erDiagram?.url
+                    ? student.projectAssets.erDiagram.url
+                    : "/img/erdigram.png"
+                }
                 alt=""
                 width={500}
               />
@@ -1157,7 +1177,11 @@ useEffect(() => {
             <h2 className="texl-sm font-black">3.4 Data Flow Diagram</h2>
             <div className="flex justify-center">
               <img
-                src={student.projectAssets.dfdDiagram.url?student.projectAssets.dfdDiagram.url:"/img/dfddigram.png"}
+                src={
+                  student.projectAssets?.dfdDiagram?.url
+                    ? student.projectAssets.dfdDiagram.url
+                    : "/img/dfddigram.png"
+                }
                 alt=""
                 width={500}
               />
@@ -1172,7 +1196,6 @@ useEffect(() => {
           <div className="space-y-2">
             {content?.coreFeatures ? (
               <>
-                
                 <h2 className="font-bold mt-4">
                   {content?.coreFeatures.split("**")[1]}
                 </h2>
@@ -1193,12 +1216,10 @@ useEffect(() => {
                   {content?.coreFeatures.split("**")[9]}
                 </h2>
                 <p>{content?.coreFeatures.split("**")[10]}</p>
-               
               </>
             ) : (
               <p>Loading Project Goals content...</p>
             )}
-
           </div>
         </div>
         {/* Page 9 - 5. Technology Stack */}
@@ -1210,24 +1231,23 @@ useEffect(() => {
             <h2 className="texl-sm font-black mt-5">
               5.1 Frontend Technologies
             </h2>
-            <li>{student.projectDetails.frontendTechnology}</li>
+            <li>{student.projectDetails?.frontendTechnology}</li>
             <h2 className="texl-sm font-black mt-5">
               5.2 Backend Technologies
             </h2>
-            <li>{student.projectDetails.backendTechnology}</li>
+            <li>{student.projectDetails?.backendTechnology}</li>
             <h2 className="texl-sm font-black mt-5">5.3 Database Solutions</h2>
-            <li>{student.projectDetails.database}</li>
+            <li>{student.projectDetails?.database}</li>
           </div>
-        {/* </div> */}
-        {/* Page 9 - 6. System Architecture */}
-        {/* <div className="page-break flex   flex-col p-8"> */}
+          {/* </div> */}
+          {/* Page 9 - 6. System Architecture */}
+          {/* <div className="page-break flex   flex-col p-8"> */}
           <h1 className="text-2xl font-bold mb-6 text-center mt-10">
             6. System Architecture
           </h1>
           <div className="space-y-2">
             {content?.systemArchitecture ? (
               <>
-                
                 <h2 className="font-bold mt-4">
                   {content?.systemArchitecture?.split("**")[1]}
                 </h2>
@@ -1256,14 +1276,11 @@ useEffect(() => {
                   {content?.systemArchitecture?.split("**")[13]}
                 </h2>
                 <p>{content?.systemArchitecture?.split("**")[14]}</p>
-
-               
               </>
             ) : (
               <p>Loading Project Goals content...</p>
             )}
-
-            </div>
+          </div>
         </div>
         {/* Page 9 - 7. System Design Methodology */}
         <div className=" page-break flex   flex-col p-8">
@@ -1271,9 +1288,8 @@ useEffect(() => {
             7. System Design Methodology
           </h1>
           <div className="space-y-2">
-             {content?.systemDesign ? (
+            {content?.systemDesign ? (
               <>
-                
                 <h2 className="font-bold mt-4">
                   {content?.systemDesign?.split("**")[1]}
                 </h2>
@@ -1306,13 +1322,11 @@ useEffect(() => {
                   {content?.systemDesign?.split("**")[15]}
                 </h2>
                 <p>{content?.systemDesign?.split("**")[16]}</p>
-                
-               
               </>
             ) : (
               <p>Loading system Design content...</p>
             )}
-            </div>
+          </div>
         </div>
         {/* Page 9 - 8. Backend Design */}
         <div className="page-break flex   flex-col p-8">
@@ -1320,9 +1334,8 @@ useEffect(() => {
             8. Backend Design
           </h1>
           <div className="space-y-2">
-             {content?.backendDesign ? (
+            {content?.backendDesign ? (
               <>
-                
                 <h2 className="font-bold mt-4">
                   {content?.backendDesign?.split("**")[1]}
                 </h2>
@@ -1334,13 +1347,12 @@ useEffect(() => {
                 <h2 className="font-bold mt-4">
                   {content?.backendDesign?.split("**")[5]}
                 </h2>
-                <p>{content?.backendDesign?.split("**")[6]}</p>               
+                <p>{content?.backendDesign?.split("**")[6]}</p>
               </>
             ) : (
               <p>Loading system Design content...</p>
             )}
-
-            </div>
+          </div>
         </div>
         {/* Page 9 - 9. Data Modeling */}
         <div className="page-break flex   flex-col p-8">
@@ -1348,9 +1360,8 @@ useEffect(() => {
             9. Data Modeling
           </h1>
           <div className="space-y-2">
-             {content?.dataModeling ? (
+            {content?.dataModeling ? (
               <>
-                
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[1]}
                 </h2>
@@ -1362,50 +1373,48 @@ useEffect(() => {
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[5]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[6]}</p>               
+                <p>{content?.dataModeling?.split("**")[6]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[7]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[8]}</p>               
+                <p>{content?.dataModeling?.split("**")[8]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[9]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[10]}</p>               
+                <p>{content?.dataModeling?.split("**")[10]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[11]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[12]}</p>               
+                <p>{content?.dataModeling?.split("**")[12]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[13]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[14]}</p>               
+                <p>{content?.dataModeling?.split("**")[14]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[15]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[16]}</p>               
+                <p>{content?.dataModeling?.split("**")[16]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[17]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[18]}</p>               
+                <p>{content?.dataModeling?.split("**")[18]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[19]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[20]}</p>               
+                <p>{content?.dataModeling?.split("**")[20]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[21]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[22]}</p>               
+                <p>{content?.dataModeling?.split("**")[22]}</p>
                 <h2 className="font-bold mt-4">
                   {content?.dataModeling?.split("**")[23]}
                 </h2>
-                <p>{content?.dataModeling?.split("**")[24]}</p>               
-                             
+                <p>{content?.dataModeling?.split("**")[24]}</p>
               </>
             ) : (
               <p>Loading system Design content...</p>
             )}
-
-            </div>
+          </div>
         </div>
         {/* Page 9 - 10. Development Plan */}
         <div className="page-break flex   flex-col p-8">
@@ -1462,16 +1471,16 @@ useEffect(() => {
               12.2 User Interface Screenshots
             </h2>
             <pre className="text-xs overflow-x-hidden">
-              {student.projectAssets.projectCode[0]}
-              {student.projectAssets.projectCode[1]}
-              {student.projectAssets.projectCode[2]}
-              {student.projectAssets.projectCode[3]}
-              {student.projectAssets.projectCode[4]}
+              {student.projectAssets?.projectCode[0]}
+              {student.projectAssets?.projectCode[1]}
+              {student.projectAssets?.projectCode[2]}
+              {student.projectAssets?.projectCode[3]}
+              {student.projectAssets?.projectCode[4]}
             </pre>
 
             <div>
-              {student.projectAssets.uiScreenshots
-                ? student.projectAssets.uiScreenshots.map((ui, index) => (
+              {student.projectAssets?.uiScreenshots
+                ? student.projectAssets?.uiScreenshots.map((ui, index) => (
                     <div key={index}>
                       <img src={ui.url} alt="" />
                     </div>
@@ -1488,7 +1497,6 @@ useEffect(() => {
           <div className="space-y-2">
             {content?.conclusion ? (
               <>
-                
                 <h2 className="font-bold mt-4">
                   {content?.conclusion?.split("**")[1]}
                 </h2>
@@ -1497,12 +1505,11 @@ useEffect(() => {
                   {content?.conclusion?.split("**")[3]}
                 </h2>
                 <p>{content?.conclusion?.split("**")[4]}</p>
-           
               </>
             ) : (
               <p>Loading system Design content...</p>
             )}
-</div>
+          </div>
         </div>
       </div>
     </div>

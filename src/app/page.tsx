@@ -9,7 +9,7 @@ export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [userId, setUserId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [Loading, setLoading] = useState("");
+
   
 
   useEffect(() => {

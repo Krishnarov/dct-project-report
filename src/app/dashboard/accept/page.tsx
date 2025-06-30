@@ -17,7 +17,7 @@ interface Student {
 
 export default function NewStudent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activePage, setActivePage] = useState("dashboard");
+
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn");

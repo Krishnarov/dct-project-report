@@ -173,8 +173,9 @@ export default function Step4Assets({ onNext }: Props) {
     }
   };
 
-  const triggerFileInput = (ref: React.RefObject<HTMLInputElement>) => {
-    if (ref.current) {
+
+  const triggerFileInput = (ref: React.RefObject<HTMLInputElement | null>) => {
+    if (ref.current) { 
       ref.current.value = ""; // Reset to allow selecting same file again
       ref.current.click();
     }
