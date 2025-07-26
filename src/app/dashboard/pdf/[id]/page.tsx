@@ -4,6 +4,74 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
+// Import add karo file ke top me
+import html2canvas from 'html2canvas';
+import { Document, Packer, Paragraph, TextRun, ImageRun } from 'docx';
+import { saveAs } from 'file-saver';
+
+// Word download function add karo
+const handleWordDownload = async () => {
+  try {
+    const content = pdfRef.current;
+    if (!content) {
+      alert("Content not found for Word generation");
+      return;
+    }
+
+    // Convert HTML to canvas
+    const canvas = await html2canvas(content, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+    });
+
+    // Convert canvas to blob
+    const imageBlob = await new Promise(resolve => {
+      canvas.toBlob(resolve, 'image/png');
+    });
+
+    // Create Word document
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${student?.projectDetails?.projectTitle || 'Project'} Report`,
+                bold: true,
+                size: 32,
+              }),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: imageBlob,
+                transformation: {
+                  width: 595,
+                  height: 842,
+                },
+              }),
+            ],
+          }),
+        ],
+      }],
+    });
+
+    // Generate and save
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `${student?.personalDetails?.name || 'report'}_project_report.docx`);
+    
+  } catch (error) {
+    console.error("Error generating Word document:", error);
+    alert("Failed to generate Word document. Please try again.");
+  }
+};
+
+
+
+
 
 interface Student {
   id: string;
@@ -511,6 +579,16 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           >
             Print
           </button>
+// Button add karo existing buttons ke saath
+<button
+  onClick={handleWordDownload}
+  disabled={isdisabled}
+  className={`bg-purple-500 text-white px-4 py-2 rounded ${
+    isdisabled ? "bg-gray-400 cursor-not-allowed" : "primary"
+  }`}
+>
+  Download Word
+</button>Ï
           {/* <button
             onClick={handleDownload}
             className="bg-green-500 text-white px-4 py-2 rounded"
