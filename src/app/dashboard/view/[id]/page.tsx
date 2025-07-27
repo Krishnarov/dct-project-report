@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, ChangeEvent } from "react";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Eye, Save } from "lucide-react";
 import Link from "next/link";
 export default function EditStudentPage() {
   const params = useParams();
@@ -13,6 +13,7 @@ export default function EditStudentPage() {
     enrollmentNumber?: string;
     email?: string;
     phone?: string;
+    certificateNumber?: string;
     certificateImage?:{ url?: string; public_id?: string;  }
     // ...aur fields agar hain
   }
@@ -411,6 +412,18 @@ export default function EditStudentPage() {
                 <input
                   name="personalDetails.phone"
                   value={form.personalDetails?.phone || ""}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Certificate Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="personalDetails.certificateNumber"
+                  value={form.personalDetails?.certificateNumber || ""}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
@@ -932,6 +945,7 @@ export default function EditStudentPage() {
                     alt=" certificate preview"
                     className="w-full h-full object-contain"
                   />
+                  <a target="_blank" className=" absolute top-2 right-13" href={form.personalDetails.certificateImage.url}><Eye/></a>
                   <button
                     onClick={(e) => {
                       e.preventDefault();

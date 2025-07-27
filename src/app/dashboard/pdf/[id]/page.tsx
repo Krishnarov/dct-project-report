@@ -10,10 +10,12 @@ import { Document, Packer, Paragraph, TextRun, ImageRun } from "docx";
 
 interface Student {
   id: string;
+  createdAt: string;
   personalDetails?: {
     name: string;
     email: string;
     phone: string;
+    certificateNumber: string;
     certificateImage: {
       url: string;
     };
@@ -37,6 +39,8 @@ interface Student {
     frontendTechnology: string;
     backendTechnology: string;
     database: string;
+    StartDate: string;
+    EndDate: string;
   };
   projectAssets?: {
     erDiagram: {
@@ -213,7 +217,7 @@ export default function PDFPage() {
   const api = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const api1 = process.env.NEXT_PUBLIC_GEMINI_API_KEY1;
   const GEMINI_API_KEY = changeApi ? api1 : api;
-  console.log("GEMINI_API_KEY:", GEMINI_API_KEY);
+  // console.log("GEMINI_API_KEY:", GEMINI_API_KEY);
 
   const [content, setContent] = useState({
     introduction: "",
@@ -495,6 +499,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
     });
 
     await Promise.all(retryPromises);
+
   };
   const handleDownload = async () => {
     const content = pdfRef.current;
@@ -1120,7 +1125,21 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           className="page-break    flex flex-col p-8"
           style={{ pageBreakAfter: "always" }}
         >
-          <img src={student.personalDetails?.certificateImage?.url} alt="" />
+          <div className=" relative">
+<div className=" absolute top-[17%] left-[70%] font-bold bg-amber-50 uppercase font-sans">{student?.personalDetails?.certificateNumber}</div>
+<div className=" absolute top-[17%] left-[24%] font-bold bg-amber-50 uppercase font-sans">{student?.createdAt?.split("T")[0]}</div>
+<div className=" absolute top-[49.5%] left-[30%] font-bold uppercase font-sans">{student.personalDetails?.name}</div>
+<div className=" absolute top-[57%] left-[20%] font-bold uppercase font-sans">{student.projectDetails?.TrainingType}</div>
+<div className=" absolute bottom-[37%] left-[20%] font-bold uppercase font-sans">{student.projectDetails?.backendTechnology}</div>
+<div className=" absolute bottom-[37%] right-[17%] font-bold uppercase font-sans">" A++ "</div>
+<div className=" absolute bottom-[33%] left-[25%] font-bold uppercase font-sans">{student.projectDetails?.duration}</div>
+<div className=" absolute bottom-[33%] left-[50%] font-bold uppercase font-sans">{student.projectDetails?.StartDate}</div>
+<div className=" absolute bottom-[33%] right-[15%] font-bold uppercase font-sans">{student.projectDetails?.EndDate}</div>
+<div className=" absolute bottom-[23%] right-[42%] font-bold uppercase font-sans"><img src="/img/mohar.png" width={100} alt="" /></div>
+<div className=" absolute bottom-[26%] right-[22%] font-bold uppercase font-sans"><img src="/img/gopalsir.png" width={100} alt="" /></div>
+<div className=" absolute bottom-[26%] left-[20%] font-bold uppercase font-sans"><img src="/img/himanshusir.png" width={100} alt="" /></div>
+          <img src="/img/Certificate.jpg" alt="" />
+          </div>
         </div>
 
         {/* Page 6 - Index */}
