@@ -216,8 +216,10 @@ export default function PDFPage() {
   const [changeApi, setChangeApi] = useState(false);
   const api = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const api1 = process.env.NEXT_PUBLIC_GEMINI_API_KEY1;
-  const GEMINI_API_KEY = changeApi ? api1 : api;
-  // console.log("GEMINI_API_KEY:", GEMINI_API_KEY);
+  const api2 = process.env.NEXT_PUBLIC_GEMINI_API_KEY2;
+  const GEMINI_API_KEY = api2;
+  // const GEMINI_API_KEY = changeApi ? api1 : api;
+  console.log("GEMINI_API_KEY:", GEMINI_API_KEY);
 
   const [content, setContent] = useState({
     introduction: "",
@@ -440,7 +442,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
     setProgress(0);
 
     const sections = getPromptTemplates(student);
-    const BATCH_SIZE = 3; // Generate 3 sections at a time to avoid rate limits
+    const BATCH_SIZE = 1; // Generate 3 sections at a time to avoid rate limits
 
     try {
       for (let i = 0; i < sections.length; i += BATCH_SIZE) {
@@ -459,7 +461,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
 
         // Rate limiting between batches
         if (i + BATCH_SIZE < sections.length) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 10000));
         }
       }
     } catch (error) {
