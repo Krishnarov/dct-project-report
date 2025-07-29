@@ -241,13 +241,11 @@ export default function EditStudentPage() {
         };
       } else {
         if(field==="collegeLogo"){
-          console.log(field);
-          
           return {
           ...safePrev,
           collegeInfo: {
-            ...safeProjectAssets,
-            [field]: null,
+            ...(safePrev.collegeInfo || {}),
+            collegeLogo: null,
           },
         };
         }

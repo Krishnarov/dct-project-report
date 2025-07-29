@@ -107,29 +107,29 @@ export default function DataTable({
         <table className="w-full border">
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
-              <th className="p-2 border">Project_Id</th>
-              <th className="p-2 border">Name</th>
-              <th className="p-2 border">Collage Name</th>
-              <th className="p-2 border">Phone</th>
-              <th className="p-2 border">Actions</th>
+              <th className="p-2 border w-[10%]">Project_Id</th>
+              <th className="p-2 border w-[20%]">Name</th>
+              <th className="p-2 border w-[40%]">Collage Name</th>
+              <th className="p-2 border w-[10%]">Phone</th>
+              <th className="p-2 border w-[20%]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredStudents.map((student) => (
               <tr key={student._id}>
-                <td className="p-2 border">
+                <td className="p-2 border w-[10%]">
                   {student?.projectId || "NA"}
                 </td>
-                <td className="p-2 border">
+                <td className="p-2 border w-[20%]">
                   {student.personalDetails?.name || "-"}
                 </td>
-                <td className="p-2 border">
+                <td className="p-2 border w-[40%]">
                   {student.collegeInfo?.collegeName || "-"}
                 </td>
-                <td className="p-2 border">
+                <td className="p-2 border w-[10%]">
                   {student.personalDetails?.phone || "-"}
                 </td>
-                <td className="p-2 border space-x-2">
+                <td className="p-2 border space-x-2 w-[20%]">
                   <Link href={`/dashboard/view/${student._id}`}>
                     <button className="bg-blue-500 text-white px-2 py-1 rounded">
                       Edit
