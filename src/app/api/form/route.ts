@@ -27,23 +27,16 @@ export async function POST(req: NextRequest) {
     };
   if (step === 2) updateData = { collegeInfo: data };
   if (step === 3) updateData = { projectDetails: data };
-  if (step === 4) updateData = { projectAssets: data };
+  if (step === 4) {
+    // Generate unique projectId
+    const projectId = `DCT-${userId}`;
+    updateData = {
+      projectAssets: data,
+      projectId, // <-- add projectId here
+    };
+  }
 
   let form = await StudentForm.findOne({ userId });
-
-  // if (step === 1) {
-  //   updateData = {
-  //     personalDetails: {
-  //       name: data.name,
-  //       email: data.email,
-  //       phone: data.phone,
-  //       enrollmentNumber: data.enrollmentNumber,
-  //       certificateNumber: data.certificateNumber,
-  //       certificateImage: data.certificateImage || null
-  //     },
-  //     currentStep: 2
-  //   };
-  // }
   if (!form && step === 1) {
     form = await StudentForm.create({
       userId,

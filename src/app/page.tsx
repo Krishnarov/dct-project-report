@@ -9,8 +9,7 @@ export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [userId, setUserId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-
-  
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     let storedUserId = localStorage.getItem("userId");
@@ -42,6 +41,10 @@ export default function MultiStepForm() {
       });
 
       if (res.ok) {
+        const result = await res.json();
+        if (step === 4 && result.form?.projectId) {
+          setProjectId(result.form.projectId);
+        }
         const nextStep = step + 1;
         setCurrentStep(nextStep);
         localStorage.setItem("currentStep", nextStep.toString());
@@ -190,7 +193,14 @@ export default function MultiStepForm() {
               Form Submitted Successfully!
             </h2>
             <p className="text-gray-600 mb-6">
-              Your project details have been submitted for review.
+              Your project details have been submitted.
+              <br />
+              <span className="font-semibold text-lg">
+                Your Project ID: {projectId ? projectId : "Loading..."}
+              </span>
+            </p>
+            <p className="text-red-500 mb-6 font-semibold">
+              Please take a screenshot of your Project ID for future reference.
             </p>
             <button
               onClick={handleResetForm}

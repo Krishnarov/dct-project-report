@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IStudentForm extends Document {
   userId: string;
+  projectId: string;
   personalDetails?: {
     name: string;
     enrollmentNumber: string;
@@ -38,13 +39,14 @@ export interface IStudentForm extends Document {
     erDiagram: { url: string; public_id: string };
   };
   currentStep: number;
-isPrint: boolean;
+  isPrint: boolean;
   status: "new" | "accept" | "reject";
 }
 
 const StudentFormSchema = new Schema<IStudentForm>(
   {
     userId: { type: String, required: true },
+    projectId: { type: String },
     personalDetails: {
       name: { type: String },
       enrollmentNumber: { type: String },

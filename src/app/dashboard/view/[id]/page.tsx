@@ -14,7 +14,7 @@ export default function EditStudentPage() {
     email?: string;
     phone?: string;
     certificateNumber?: string;
-    certificateImage?:{ url?: string; public_id?: string;  }
+    certificateImage?: { url?: string; public_id?: string };
     // ...aur fields agar hain
   }
   interface CollegeInfo {
@@ -27,7 +27,6 @@ export default function EditStudentPage() {
   }
   interface ProjectDetails {
     projectName?: string;
-    projectTitle?: string;
     TrainingType?: string;
     TeamName?: string;
     StartDate?: string;
@@ -54,7 +53,7 @@ export default function EditStudentPage() {
   }
   const [form, setForm] = useState<StudentFormType | null>(null);
   const [loading, setLoading] = useState(true);
-// console.log(form);
+  // console.log(form);
 
   useEffect(() => {
     fetch(`/api/students/${studentId}`)
@@ -153,6 +152,20 @@ export default function EditStudentPage() {
       });
 
       const data = await res.json();
+      console.log(data);
+
+      if (field === "collegeLogo") {
+        setForm((prev: any) => ({
+          ...(prev || {}),
+          collegeInfo: {
+            ...(prev?.collegeInfo || {}),
+            [field]: {
+              url: data.url,
+              public_id: data.public_id,
+            },
+          },
+        }));
+      }
 
       setForm((prev: any) => ({
         ...(prev || {}),
@@ -227,6 +240,17 @@ export default function EditStudentPage() {
           },
         };
       } else {
+        if(field==="collegeLogo"){
+          console.log(field);
+          
+          return {
+          ...safePrev,
+          collegeInfo: {
+            ...safeProjectAssets,
+            [field]: null,
+          },
+        };
+        }
         // Remove single asset (for diagrams)
         return {
           ...safePrev,
@@ -355,22 +379,23 @@ export default function EditStudentPage() {
         Loading...
       </div>
     );
+  console.log(form);
 
   return (
-    <div className="max-w-7xl mx-auto p-5 space-y-6">
+    <div className="max-w-7xl mx-auto p-5 space-y-6 dark:bg-gray-950">
       <h1 className="text-3xl font-bold mb-4">Edit Student Details</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Personal and College Info */}
         <div className="lg:col-span-2 space-y-6">
           {/* Personal Details */}
-          <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
             <h2 className="text-xl font-semibold border-b pb-2">
               Personal Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -382,7 +407,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Enrollment Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -394,7 +419,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -406,7 +431,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -418,7 +443,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Certificate Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -433,13 +458,13 @@ export default function EditStudentPage() {
           </div>
 
           {/* College Info */}
-          <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
             <h2 className="text-xl font-semibold border-b pb-2">
               College Info
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   College Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -451,7 +476,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   HOD Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -463,7 +488,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Course <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -482,7 +507,7 @@ export default function EditStudentPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Branch <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -512,7 +537,7 @@ export default function EditStudentPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Academic Session <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -531,17 +556,40 @@ export default function EditStudentPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   College Logo
                 </label>
                 <div className="flex items-center gap-4">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors relative">
                     {form.collegeInfo?.collegeLogo?.url ? (
-                      <img
-                        src={form.collegeInfo.collegeLogo.url}
-                        alt="College logo preview"
-                        className="w-full h-full object-contain p-2"
-                      />
+                      <>
+                        <img
+                          src={form.collegeInfo.collegeLogo.url}
+                          alt="College logo preview"
+                          className="w-full h-full object-contain p-2"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            removeAsset("collegeLogo");
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600  "
+                          title="Remove diagram"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </>
                     ) : (
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <svg
@@ -581,13 +629,13 @@ export default function EditStudentPage() {
           </div>
 
           {/* Project Details */}
-          <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
             <h2 className="text-xl font-semibold border-b pb-2">
               Project Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Project Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -598,8 +646,8 @@ export default function EditStudentPage() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              {/* <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Project Title <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -609,9 +657,9 @@ export default function EditStudentPage() {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
-              </div>
+              </div> */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Training Type <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -622,22 +670,19 @@ export default function EditStudentPage() {
                   required
                 >
                   <option value="">Select Training Type</option>
-                  <option value="Summer Training Online">
-                    Summer Training Online
+                  <option value="Summer Training ">Summer Training</option>
+
+                  <option value="Winter Training ">Winter Training</option>
+                  <option value="Vocational Training ">
+                    Vocational Training{" "}
                   </option>
-                  <option value="Summer Training Offline">
-                    Summer Training Offline
-                  </option>
-                  <option value="Winter Training Online">
-                    Winter Training Online
-                  </option>
-                  <option value="Winter Training Offline">
-                    Winter Training Offline
+                  <option value="Industrial Training ">
+                    Industrial Training{" "}
                   </option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Team Members <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -649,7 +694,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Start Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -662,7 +707,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   End Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -675,7 +720,7 @@ export default function EditStudentPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Backend Technology <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -690,6 +735,7 @@ export default function EditStudentPage() {
                   <option value="ASP.Net">ASP.Net</option>
                   <option value="Java">Java</option>
                   <option value="Python">Python</option>
+                  <option value="Python">Python with Django</option>
                   <option value="Android">Android</option>
                   <option value="MERN Stack">MERN Stack</option>
                   <option value="Flutter / Dart">Flutter / Dart</option>
@@ -697,7 +743,7 @@ export default function EditStudentPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Frontend Technology <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -720,7 +766,7 @@ export default function EditStudentPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Database <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -735,11 +781,12 @@ export default function EditStudentPage() {
                   <option value="MSSQL">MSSQL</option>
                   <option value="MongoDB">MongoDB</option>
                   <option value="Firebase">Firebase</option>
+                  <option value="SQLITE">SQLITE</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Duration <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -759,14 +806,14 @@ export default function EditStudentPage() {
           </div>
 
           {/* Project Code */}
-          <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
             <h2 className="text-xl font-semibold border-b pb-2">
               Project Code
             </h2>
             <div className="grid grid-cols-1 gap-4">
               {[0, 1, 2, 3, 4].map((num) => (
                 <div key={num}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Code Snippet {num + 1}
                   </label>
                   <textarea
@@ -785,7 +832,7 @@ export default function EditStudentPage() {
         {/* Right Column - Project Assets */}
         <div className="space-y-6">
           {/* Status */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold border-b pb-2 mb-4">Status</h2>
             <select
               name="status"
@@ -800,7 +847,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* DFD Diagram */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold border-b pb-2 mb-4">
               DFD Diagram
             </h2>
@@ -867,7 +914,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* ER Diagram */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold border-b pb-2 mb-4">
               ER Diagram
             </h2>
@@ -933,7 +980,7 @@ export default function EditStudentPage() {
             </label>
           </div>
           {/* Certificate */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold border-b pb-2 mb-4">
               Certificate
             </h2>
@@ -945,7 +992,13 @@ export default function EditStudentPage() {
                     alt=" certificate preview"
                     className="w-full h-full object-contain"
                   />
-                  <a target="_blank" className=" absolute top-2 right-13" href={form.personalDetails.certificateImage.url}><Eye/></a>
+                  <a
+                    target="_blank"
+                    className=" absolute top-2 right-13"
+                    href={form.personalDetails.certificateImage.url}
+                  >
+                    <Eye />
+                  </a>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -1001,7 +1054,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* UI Screenshots */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold border-b pb-2 mb-4">
               UI Screenshots
             </h2>

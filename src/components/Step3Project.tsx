@@ -2,7 +2,6 @@ import { useState, ChangeEvent } from "react";
 
 interface ProjectForm {
   projectName: string;
-  projectTitle: string;
   TrainingType: string;
   TeamName: string;
   StartDate: string;
@@ -20,7 +19,6 @@ interface Props {
 export default function Step3Project({ onNext }: Props) {
   const [form, setForm] = useState<ProjectForm>({
     projectName: "",
-    projectTitle: "",
     TrainingType: "",
     TeamName: "",
     StartDate: "",
@@ -45,7 +43,7 @@ export default function Step3Project({ onNext }: Props) {
       </div>
 
       <div className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-5"> */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Project Name <span className="text-red-500">*</span>
@@ -60,7 +58,7 @@ export default function Step3Project({ onNext }: Props) {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Project Title <span className="text-red-500">*</span>
             </label>
@@ -72,8 +70,8 @@ export default function Step3Project({ onNext }: Props) {
               className="w-full px-4 py-2.5 border dark:text-white border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
             />
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
@@ -157,6 +155,7 @@ export default function Step3Project({ onNext }: Props) {
               <option value="ASP.Net">ASP.Net</option>
               <option value="Java">Java</option>
               <option value="Python">Python</option>
+              <option value="Python">Python With Django</option>
               <option value="Android">Android</option>
               <option value="MERN Stack">MERN Stack</option>
               <option value="Flutter / Dart">Flutter / Dart</option>
@@ -204,6 +203,7 @@ export default function Step3Project({ onNext }: Props) {
               <option value="MSSQL">MSSQL</option>
               <option value="MongoDB">MongoDB</option>
               <option value="Firebase">Firebase</option>
+              <option value="SQLITE">SQLITE</option>
               <option value="Other">Other</option>
             </select>
           </div>

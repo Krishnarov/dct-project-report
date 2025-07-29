@@ -4,6 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
+import jsPDF from "jspdf";
+import { toPng, toJpeg } from "html-to-image";
+import { saveAs } from "file-saver";
 // Import add karo file ke top me
 import html2canvas from "html2canvas";
 import { Document, Packer, Paragraph, TextRun, ImageRun } from "docx";
@@ -33,7 +36,6 @@ interface Student {
   projectDetails?: {
     projectName: string;
     description: string;
-    projectTitle: string;
     duration: string;
     TrainingType: string;
     frontendTechnology: string;
@@ -64,84 +66,7 @@ export default function PDFPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
 
-  // Word download function add karo
-  // ...existing code...
-  const handleWordDownload = async () => {
-    try {
-      if (typeof window === "undefined") return;
-      const { saveAs } = await import("file-saver");
-      const content = pdfRef.current;
-      if (!content) {
-        alert("Content not found for Word generation");
-        return;
-      }
 
-      // Convert HTML to canvas
-      const canvas = await html2canvas(content, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-      });
-
-      // Convert canvas to blob
-      const imageBlob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, "image/png");
-      });
-
-      if (!imageBlob) {
-        alert("Failed to generate image for Word document.");
-        return;
-      }
-
-      // Convert Blob to ArrayBuffer, then to Uint8Array
-      const arrayBuffer = await imageBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      // Create Word document
-      const doc = new Document({
-        sections: [
-          {
-            properties: {},
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `${
-                      student?.projectDetails?.projectTitle || "Project"
-                    } Report`,
-                    bold: true,
-                    size: 32,
-                  }),
-                ],
-              }),
-              // new Paragraph({
-              //   children: [
-              //     new ImageRun({
-              //       data: uint8Array,
-              //       transformation: {
-              //         width: 595,
-              //         height: 842,
-              //       },
-              //       mimeType: "image/png", // <-- Add this line
-              //     }),
-              //   ],
-              // }),
-            ],
-          },
-        ],
-      });
-
-      // Generate and save
-      const blob = await Packer.toBlob(doc);
-      saveAs(
-        blob,
-        `${student?.personalDetails?.name || "report"}_project_report.docx`
-      );
-    } catch (error) {
-      console.error("Error generating Word document:", error);
-      alert("Failed to generate Word document. Please try again.");
-    }
-  };
 
   useEffect(() => {
     // Actual API call would look like:
@@ -240,7 +165,7 @@ export default function PDFPage() {
 
   const getPromptTemplates = (student: Student) => {
     const {
-      projectTitle,
+
       projectName,
       backendTechnology,
       frontendTechnology,
@@ -250,13 +175,13 @@ export default function PDFPage() {
     return [
       {
         key: "introduction",
-        prompt: `Generate a detailed introduction section for the ${projectTitle} project. Format your response exactly as shown below with clear sections:
+        prompt: `Generate a detailed introduction section for the ${projectName} project. Format your response exactly as shown below with clear sections:
 
 **1.1 Project Overview**
 Write a single comprehensive paragraph about ${projectName}, its main purpose, core functionality, and what makes it unique. Mention how it uses ${frontendTechnology} for frontend and ${backendTechnology} for backend.
 
 **1.2 Background**
-Write a single comprehensive paragraph about the current market need, industry challenges, and why this ${projectTitle} project was chosen. Explain the gap in existing solutions.
+Write a single comprehensive paragraph about the current market need, industry challenges, and why this ${projectName} project was chosen. Explain the gap in existing solutions.
 
 **1.3 Objectives & Scope**
 Write a single comprehensive paragraph for Objectives & Scope:
@@ -271,7 +196,7 @@ Use professional language and ensure each section has substantial content in sin
       },
       {
         key: "projectGoals",
-        prompt: `Generate Project Goals section for ${projectTitle}. Format exactly as below:
+        prompt: `Generate Project Goals section for ${projectName}. Format exactly as below:
 
 **2.1 Purpose & Benefits**
 Write a single comprehensive paragraph about the purpose and benefits:
@@ -279,11 +204,11 @@ Write a single comprehensive paragraph about the purpose and benefits:
 **2.2 Key Deliverables**
 Write a single comprehensive paragraph about key deliverables:
 
-You can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+You can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "systemAnalysis",
-        prompt: `Create comprehensive System Analysis for ${projectTitle}. Format exactly as below:
+        prompt: `Create comprehensive System Analysis for ${projectName}. Format exactly as below:
 
 **3.1 System Objectives**
 Write a single comprehensive paragraph about System Objectives:
@@ -291,11 +216,11 @@ Write a single comprehensive paragraph about System Objectives:
 **3.2 Development Methodology**
 Write a single comprehensive paragraph about Development Methodology:
  
-You can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+You can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "coreFeatures",
-        prompt: `List and describe 5 core features for ${projectTitle} built with ${backendTechnology} and ${frontendTechnology}. Format exactly as below:
+        prompt: `List and describe 5 core features for ${projectName} built with ${backendTechnology} and ${frontendTechnology}. Format exactly as below:
 
 **4.1 User Authentication & Authorization**
 Write a single comprehensive paragraph about this section:
@@ -312,11 +237,11 @@ Write a single comprehensive paragraph about this section:
 **4.5 Admin Dashboard & Controls**
 Write a single comprehensive paragraph about this section:
 
-Provide implementation details and user benefits for each feature in ${projectName}, you can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+Provide implementation details and user benefits for each feature in ${projectName}, you can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "systemArchitecture",
-        prompt: `Describe comprehensive system architecture for ${projectTitle}. Format exactly as below:
+        prompt: `Describe comprehensive system architecture for ${projectName}. Format exactly as below:
 
 **6.1 High-Level Architecture**
 Write a single comprehensive paragraph about High-Level Architecture:
@@ -324,11 +249,11 @@ Write a single comprehensive paragraph about High-Level Architecture:
 **6.2 Key Components**
 Write a single comprehensive paragraph about Key Components:
 
-Include technical specifications and explain how components interact in ${projectTitle}, you can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+Include technical specifications and explain how components interact in ${projectName}, you can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "systemDesign",
-        prompt: `Explain comprehensive system design approach for ${projectTitle}. Format exactly as below:
+        prompt: `Explain comprehensive system design approach for ${projectName}. Format exactly as below:
 
 **7.1 Design Methodology**
 Write a single comprehensive paragraph about Design Methodology:
@@ -336,11 +261,11 @@ Write a single comprehensive paragraph about Design Methodology:
 **7.2 Design Patterns**
 Write a single comprehensive paragraph about Design Patterns:
 
-Focus on specific design decisions made for ${projectTitle} and their technical rationale, you can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+Focus on specific design decisions made for ${projectName} and their technical rationale, you can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "backendDesign",
-        prompt: `Detail comprehensive backend design for ${projectTitle} using ${backendTechnology}. Format exactly as below:
+        prompt: `Detail comprehensive backend design for ${projectName} using ${backendTechnology}. Format exactly as below:
 
 **8.1 Data Models**
 Write a single comprehensive paragraph about Data Models:
@@ -351,11 +276,11 @@ Write a single comprehensive paragraph about API Design:
 **8.3 Business Logic**
 Write a single comprehensive paragraph about Business Logic:
 
-Include specific technical implementation details for ${projectTitle}, you can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+Include specific technical implementation details for ${projectName}, you can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "dataModeling",
-        prompt: `Explain comprehensive data modeling for ${projectTitle} with ${database}. Format exactly as below:
+        prompt: `Explain comprehensive data modeling for ${projectName} with ${database}. Format exactly as below:
 
 **9.1 Database Schema**
 Write a single comprehensive paragraph about Database Schema:
@@ -363,11 +288,11 @@ Write a single comprehensive paragraph about Database Schema:
 **9.2 Collections/Tables**
 Write a single comprehensive paragraph about Collections/Tables:
 
-Provide clear technical rationale for database design decisions in ${projectTitle}, you can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+Provide clear technical rationale for database design decisions in ${projectName}, you can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
       {
         key: "conclusion",
-        prompt: `Write comprehensive conclusion for ${projectTitle} project. Format exactly as below:
+        prompt: `Write comprehensive conclusion for ${projectName} project. Format exactly as below:
 
 **13.1 Project Summary**
 Write a single comprehensive paragraph about Project Summary:
@@ -375,7 +300,7 @@ Write a single comprehensive paragraph about Project Summary:
 **13.2 Future Enhancements**
 Write a single comprehensive paragraph about Future Enhancements:
 
-Summarize the overall success of ${projectTitle} and provide a roadmap for future development, you can use project Details name:${projectName}, Title:${projectTitle}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
+Summarize the overall success of ${projectName} and provide a roadmap for future development, you can use project Details name:${projectName}, Title:${projectName}, backendTechnology:${backendTechnology}, frontendTechnology:${frontendTechnology}, Database:${database}.`,
       },
     ];
   };
@@ -481,7 +406,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
         hasApiKey: !!GEMINI_API_KEY,
       });
     }
-  }, [student?.projectDetails?.projectTitle]); // Only re-run if project title changes
+  }, [student?.projectDetails?.projectName]); // Only re-run if project title changes
 
   // Optional: Add retry mechanism
   const retryFailedSections = async () => {
@@ -503,63 +428,9 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
     await Promise.all(retryPromises);
 
   };
-  const handleDownload = async () => {
-    const content = pdfRef.current;
-    if (!content) {
-      alert("Content not found for PDF generation");
-      return;
-    }
 
-    try {
-      // Dynamically import html2pdf.js to avoid SSR issues
-      const html2pdf = (await import("html2pdf.js" as any)).default;
 
-      // Clone the content to avoid modifying the original
-      const clonedContent = content.cloneNode(true) as HTMLElement;
 
-      // Remove any elements that shouldn't be in PDF
-      const buttonsToRemove = clonedContent.querySelectorAll("button");
-      buttonsToRemove.forEach((button) => button.remove());
-
-      const opt = {
-        margin: [10, 10, 10, 10], // top, right, bottom, left
-        filename: `${
-          student?.personalDetails?.name || "report"
-        }_project_report.pdf`,
-        image: {
-          type: "jpeg",
-          quality: 0.98,
-        },
-        html2canvas: {
-          scale: 2,
-          logging: false,
-          useCORS: true,
-          allowTaint: true,
-          letterRendering: true,
-          height: window.innerHeight,
-          width: window.innerWidth,
-        },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait",
-          compress: true,
-        },
-        pagebreak: {
-          mode: ["avoid-all", "css", "legacy"],
-        },
-      };
-
-      // Generate and save PDF
-      await html2pdf().set(opt).from(clonedContent).save();
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert(
-        "Failed to generate PDF. Please try again or check your internet connection."
-      );
-    }
-  };
-  // console.log(student);
 
   useEffect(() => {
     if (progress === 100) {
@@ -587,7 +458,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
               if (window.history.length > 1) {
                 router.back();
               } else {
-                router.push("/dashboard"); // ya "/" ya koi bhi default route
+                router.push("/dashboard"); 
               }
             }}
             className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -603,21 +474,6 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           >
             Print
           </button>
-          <button
-            onClick={handleWordDownload}
-            disabled={isdisabled}
-            className={`bg-purple-500 text-white px-4 py-2 rounded ${
-              isdisabled ? "bg-gray-400 cursor-not-allowed" : "primary"
-            }`}
-          >
-            Download Word
-          </button>
-          {/* <button
-            onClick={handleDownload}
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Download PDF
-          </button> */}
           <button
             onClick={retryFailedSections}
             className="bg-green-500 text-white px-4 py-2 rounded"
@@ -719,7 +575,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
         </div>
 
         {/* Page 2 */}
-        <div
+        {/* <div
           className="page-break  flex flex-col p-8"
           style={{ pageBreakAfter: "always" }}
         >
@@ -832,7 +688,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <p className="mt-2 ">
             <strong>Academic Year:</strong> {student.collegeInfo?.session}
           </p>
-        </div>
+        </div> */}
 
         {/* Page 3 */}
         <div
@@ -853,7 +709,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <p className="mb-4 text-justify">
             This is to certify that the project titled “
             <strong className=" uppercase">
-              {student.projectDetails?.projectTitle}
+              {student.projectDetails?.projectName}
             </strong>
             ” has been successfully completed by{" "}
             <strong className=" uppercase">
@@ -962,7 +818,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
             I hereby declare that the work presented in this Minor Project
             titled “
             <strong className=" uppercase">
-              {student.projectDetails?.projectTitle}
+              {student.projectDetails?.projectName}
             </strong>
             ” is the result of my own effort and is an original contribution to
             the field of{" "}
@@ -1128,8 +984,8 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           style={{ pageBreakAfter: "always" }}
         >
           <div className=" relative">
-<div className=" absolute top-[17%] left-[70%] font-bold bg-amber-50 uppercase font-sans">{student?.personalDetails?.certificateNumber}</div>
-<div className=" absolute top-[17%] left-[24%] font-bold bg-amber-50 uppercase font-sans">{student?.createdAt?.split("T")[0]}</div>
+<div className=" absolute top-[17%] left-[70%] font-bold bg-white uppercase font-sans">{student?.personalDetails?.certificateNumber}</div>
+<div className=" absolute top-[17%] left-[24%] font-bold bg-white uppercase font-sans">{student?.createdAt?.split("T")[0]}</div>
 <div className=" absolute top-[49.5%] left-[30%] font-bold uppercase font-sans">{student.personalDetails?.name}</div>
 <div className=" absolute top-[57%] left-[20%] font-bold uppercase font-sans">{student.projectDetails?.TrainingType}</div>
 <div className=" absolute bottom-[37%] left-[20%] font-bold uppercase font-sans">{student.projectDetails?.backendTechnology}</div>
@@ -1257,7 +1113,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             1. Introduction
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             <h2 className="font-bold mt-4">
               {content?.introduction.split("**")[1]}
             </h2>
@@ -1285,7 +1141,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             2. Project Goals
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.projectGoals ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1307,7 +1163,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             3. System Analysis
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.systemAnalysis ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1358,7 +1214,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             4. Core Features
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.coreFeatures ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1410,7 +1266,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center mt-10">
             6. System Architecture
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.systemArchitecture ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1452,7 +1308,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             7. System Design Methodology
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.systemDesign ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1498,7 +1354,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             8. Backend Design
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.backendDesign ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1524,7 +1380,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             9. Data Modeling
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.dataModeling ? (
               <>
                 <h2 className="font-bold mt-4">
@@ -1659,7 +1515,7 @@ Summarize the overall success of ${projectTitle} and provide a roadmap for futur
           <h1 className="text-2xl font-bold mb-6 text-center ">
             13. Conclusion
           </h1>
-          <div className="space-y-2">
+          <div className="space-y-2 text-justify">
             {content?.conclusion ? (
               <>
                 <h2 className="font-bold mt-4">

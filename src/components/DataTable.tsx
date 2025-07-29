@@ -10,7 +10,11 @@ interface Student {
     phone: string;
     enrollmentNumber?: string;
   };
+  collegeInfo?:{
+    collegeName:string;
+  }
   status?: string;
+  projectId?:string;
 }
 
 export default function DataTable({
@@ -46,7 +50,7 @@ export default function DataTable({
   const filteredStudents = students.filter(
     (s) =>
       s.personalDetails?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.personalDetails?.enrollmentNumber
+      s.projectId || s.personalDetails?.phone
         ?.toLowerCase()
         .includes(search.toLowerCase())
   );
@@ -77,6 +81,7 @@ export default function DataTable({
     }
   };
 
+
   if (loading)
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -102,9 +107,9 @@ export default function DataTable({
         <table className="w-full border">
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
+              <th className="p-2 border">Project_Id</th>
               <th className="p-2 border">Name</th>
-              <th className="p-2 border">Enrollment No.</th>
-              <th className="p-2 border">Email</th>
+              <th className="p-2 border">Collage Name</th>
               <th className="p-2 border">Phone</th>
               <th className="p-2 border">Actions</th>
             </tr>
@@ -113,13 +118,13 @@ export default function DataTable({
             {filteredStudents.map((student) => (
               <tr key={student._id}>
                 <td className="p-2 border">
+                  {student?.projectId || "NA"}
+                </td>
+                <td className="p-2 border">
                   {student.personalDetails?.name || "-"}
                 </td>
                 <td className="p-2 border">
-                  {student.personalDetails?.enrollmentNumber || "-"}
-                </td>
-                <td className="p-2 border">
-                  {student.personalDetails?.email || "-"}
+                  {student.collegeInfo?.collegeName || "-"}
                 </td>
                 <td className="p-2 border">
                   {student.personalDetails?.phone || "-"}
