@@ -4,13 +4,20 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
-import jsPDF from "jspdf";
-import { toPng, toJpeg } from "html-to-image";
-import { saveAs } from "file-saver";
-// Import add karo file ke top me
-import html2canvas from "html2canvas";
-import { Document, Packer, Paragraph, TextRun, ImageRun } from "docx";
 
+// Add this import at the top with your other imports
+// import html2canvas from "html2canvas";
+// import {
+//   Document,
+//   Packer,
+//   Paragraph,
+//   TextRun,
+//   ImageRun,
+//   HeadingLevel,
+//   AlignmentType,
+//   PageBreak,
+// } from "docx";
+import { saveAs } from "file-saver";
 interface Student {
   id: string;
   createdAt: string;
@@ -64,12 +71,31 @@ export default function PDFPage() {
   const studentId = params.id as string;
 
   const [student, setStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(2);
+  const [isdisabled, setisdisabled] = useState(true);
+  const [content, setContent] = useState({
+    introduction: "",
+    projectGoals: "",
+    systemAnalysis: "",
+    coreFeatures: "",
+    systemArchitecture: "",
+    systemDesign: "",
+    backendDesign: "",
+    dataModeling: "",
+    conclusion: "",
+  });
   const pdfRef = useRef<HTMLDivElement>(null);
+  const [completedSections, setCompletedSections] = useState(0);
+  const totalSections = 9;
+  // Multiple API keys configuration
+  const api1 = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const api2 = process.env.NEXT_PUBLIC_GEMINI_API_KEY1;
+  const api3 = process.env.NEXT_PUBLIC_GEMINI_API_KEY2;
 
-
+  const API_KEYS = [api1, api2, api3];
 
   useEffect(() => {
-    // Actual API call would look like:
     fetch(`/api/students/${studentId}`)
       .then((res) => res.json())
       .then((data) => setStudent(data.student))
@@ -138,39 +164,10 @@ export default function PDFPage() {
       document.head.removeChild(styleElement);
     }, 1000);
   };
-  const [changeApi, setChangeApi] = useState(false);
-  const api = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const api1 = process.env.NEXT_PUBLIC_GEMINI_API_KEY1;
-  const api2 = process.env.NEXT_PUBLIC_GEMINI_API_KEY2;
-  const GEMINI_API_KEY = api2;
-  // const GEMINI_API_KEY = changeApi ? api1 : api;
-  console.log("GEMINI_API_KEY:", GEMINI_API_KEY);
-
-  const [content, setContent] = useState({
-    introduction: "",
-    projectGoals: "",
-    systemAnalysis: "",
-    coreFeatures: "",
-    systemArchitecture: "",
-    systemDesign: "",
-    backendDesign: "",
-    dataModeling: "",
-    conclusion: "",
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(2);
-  const [isdisabled, setisdisabled] = useState(true);
-  // console.log(progress);
 
   const getPromptTemplates = (student: Student) => {
-    const {
-
-      projectName,
-      backendTechnology,
-      frontendTechnology,
-      database,
-    } = student?.projectDetails || {};
+    const { projectName, backendTechnology, frontendTechnology, database } =
+      student?.projectDetails || {};
 
     return [
       {
@@ -304,9 +301,12 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       },
     ];
   };
-
-  // Optimized content generation with better error handling
-  const generateContent = async (section: string, prompt: string) => {
+  // Generate content function
+  const generateContentApi2 = async (
+    section: string,
+    prompt: string,
+    apiKey: string
+  ) => {
     try {
       const requestData = {
         contents: [
@@ -329,10 +329,10 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       };
 
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
         requestData,
         {
-          timeout: 30000, // 30 second timeout
+          timeout: 30000,
           headers: {
             "Content-Type": "application/json",
           },
@@ -342,6 +342,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
         const generatedText = response.data.candidates[0].content.parts[0].text;
         setContent((prev) => ({ ...prev, [section]: generatedText }));
+        setCompletedSections((prev) => prev + 1);
         return true;
       } else {
         throw new Error("Invalid response format");
@@ -352,92 +353,1122 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
         ...prev,
         [section]: `Error generating content for ${section}. Please try again.`,
       }));
+      setCompletedSections((prev) => prev + 1);
       return false;
     }
   };
-
-  // Parallel generation with concurrency control
-  const generateAllContent = async () => {
-    if (!student?.projectDetails) {
-      console.error("Student project details not available");
-      return;
-    }
-
-    setLoading(true);
-    setProgress(0);
-
-    const sections = getPromptTemplates(student);
-    const BATCH_SIZE = 1; // Generate 3 sections at a time to avoid rate limits
-
+  // Generate content function
+  const generateContentApi1 = async (
+    section: string,
+    prompt: string,
+    apiKey: string
+  ) => {
     try {
-      for (let i = 0; i < sections.length; i += BATCH_SIZE) {
-        const batch = sections.slice(i, i + BATCH_SIZE);
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
 
-        // Process batch concurrently
-        const promises = batch.map(({ key, prompt }) =>
-          generateContent(key, prompt)
-        );
-
-        await Promise.all(promises);
-
-        // Update progress
-        const completedSections = Math.min(i + BATCH_SIZE, sections.length);
-        setProgress((completedSections / sections.length) * 100);
-
-        // Rate limiting between batches
-        if (i + BATCH_SIZE < sections.length) {
-          await new Promise((resolve) => setTimeout(resolve, 10000));
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
+      );
+
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, [section]: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
       }
     } catch (error) {
-      console.error("Error in batch generation:", error);
-    } finally {
-      setLoading(false);
+      console.error(`Error generating ${section}:`, error);
+      setContent((prev) => ({
+        ...prev,
+        [section]: `Error generating content for ${section}. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
     }
   };
+  // Generate content function
+  const generateContent = async (
+    section: string,
+    prompt: string,
+    apiKey: string
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
 
-  // Enhanced useEffect with dependency management
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, [section]: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (error) {
+      console.error(`Error generating ${section}:`, error);
+      setContent((prev) => ({
+        ...prev,
+        [section]: `Error generating content for ${section}. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
+    }
+  };
+  // Generate content for API 1 (first 3 sections)
+  const generateContent1 = async () => {
+    if (!student?.projectDetails || !API_KEYS[0]) return;
+
+    setLoading(true);
+    const sections = getPromptTemplates(student);
+    const sectionsGroup1 = sections.slice(0, 3); // introduction, projectGoals, systemAnalysis
+
+    for (let i = 0; i < sectionsGroup1.length; i++) {
+      const { key, prompt } = sectionsGroup1[i];
+      await generateContent(key, prompt, API_KEYS[0]);
+
+      // Small delay between requests
+      if (i < sectionsGroup1.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    }
+  };
+  // Generate content for API 2 (next 3 sections)
+  const generateContent2 = async () => {
+    if (!student?.projectDetails || !API_KEYS[1]) return;
+
+    const sections = getPromptTemplates(student);
+    const sectionsGroup2 = sections.slice(3, 6); // coreFeatures, systemArchitecture, systemDesign
+
+    for (let i = 0; i < sectionsGroup2.length; i++) {
+      const { key, prompt } = sectionsGroup2[i];
+      await generateContentApi1(key, prompt, API_KEYS[1]);
+      // Small delay between requests
+      if (i < sectionsGroup2.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    }
+  };
+  // Generate content for API 3 (last 3 sections)
+  const generateContent3 = async () => {
+    if (!student?.projectDetails || !API_KEYS[2]) return;
+
+    const sections = getPromptTemplates(student);
+    const sectionsGroup3 = sections.slice(6, 9); // backendDesign, dataModeling, conclusion
+
+    for (let i = 0; i < sectionsGroup3.length; i++) {
+      const { key, prompt } = sectionsGroup3[i];
+      await generateContentApi2(key, prompt, API_KEYS[2]);
+
+      // Small delay between requests
+      if (i < sectionsGroup3.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    }
+
+    setLoading(false);
+  };
+  // Updated useEffect to call three separate functions
   useEffect(() => {
-    if (student?.projectDetails && GEMINI_API_KEY) {
-      generateAllContent();
+    if (student?.projectDetails && API_KEYS.every((key) => key)) {
+      generateContent1();
+      generateContent2();
+      generateContent3();
     } else {
       console.warn("Missing required data:", {
         hasStudent: !!student?.projectDetails,
-        hasApiKey: !!GEMINI_API_KEY,
+        hasAllApiKeys: API_KEYS.every((key) => key),
       });
     }
-  }, [student?.projectDetails?.projectName]); // Only re-run if project title changes
-
-  // Optional: Add retry mechanism
-  const retryFailedSections = async () => {
-    setChangeApi(!changeApi);
-    const failedSections = Object.entries(content)
-      .filter(([key, value]) => value.includes("Error generating"))
-      .map(([key]) => key);
-
-    if (failedSections.length === 0) return;
-    if (!student) return;
-    const sections = getPromptTemplates(student);
-    const retryPromises = failedSections.map((sectionKey) => {
-      const section = sections.find((s) => s.key === sectionKey);
-      return section
-        ? generateContent(section.key, section.prompt)
-        : Promise.resolve(false);
-    });
-
-    await Promise.all(retryPromises);
-
-  };
-
-
-
+  }, [student?.projectDetails?.projectName]);
 
   useEffect(() => {
-    if (progress === 100) {
-      setisdisabled(false);
-    }
-  }, [progress]);
+    setProgress(Math.round((completedSections / totalSections) * 100));
+    if (completedSections === totalSections) setisdisabled(false);
+  }, [completedSections]);
 
+  // Enhanced Word Document Generation Function
+  // const handleDownloadWord = async () => {
+  //   if (!student) return;
+
+  //   try {
+  //     setLoading(true);
+
+  //     // Helper function to convert image URL to base64
+  //     const getImageAsBase64 = async (url) => {
+  //       try {
+  //         const response = await fetch(url);
+  //         const blob = await response.blob();
+  //         return new Promise((resolve) => {
+  //           const reader = new FileReader();
+  //           reader.onload = () => resolve(reader.result.split(',')[1]);
+  //           reader.readAsDataURL(blob);
+  //         });
+  //       } catch (error) {
+  //         console.error('Error converting image:', error);
+  //         return null;
+  //       }
+  //     };
+
+  //     // Get images as base64
+  //     const digicodersLogo = await getImageAsBase64('/img/Digicoders-new-logo.png');
+  //     const certificateImage = await getImageAsBase64('/img/Certificate.jpg');
+  //     const collegeLogo = student.collegeInfo?.collegeLogo?.url ?
+  //       await getImageAsBase64(student.collegeInfo.collegeLogo.url) : null;
+  //     const erDiagram = student.projectAssets?.erDiagram?.url ?
+  //       await getImageAsBase64(student.projectAssets.erDiagram.url) :
+  //       await getImageAsBase64('/img/erdigram.png');
+  //     const dfdDiagram = student.projectAssets?.dfdDiagram?.url ?
+  //       await getImageAsBase64(student.projectAssets.dfdDiagram.url) :
+  //       await getImageAsBase64('/img/dfddigram.png');
+
+  //     // Helper function to parse content sections
+  //     const parseContentSection = (content) => {
+  //       if (!content) return [];
+  //       const parts = content.split('**').filter((text, index) => index > 0 && text.trim());
+  //       const paragraphs = [];
+
+  //       for (let i = 0; i < parts.length; i += 2) {
+  //         if (parts[i] && parts[i + 1]) {
+  //           // Heading
+  //           paragraphs.push(new Paragraph({
+  //             children: [
+  //               new TextRun({
+  //                 text: parts[i].trim(),
+  //                 bold: true,
+  //                 size: 24,
+  //               }),
+  //             ],
+  //             spacing: { before: 300, after: 200 },
+  //           }));
+
+  //           // Content
+  //           paragraphs.push(new Paragraph({
+  //             children: [
+  //               new TextRun({
+  //                 text: parts[i + 1].trim(),
+  //                 size: 22,
+  //               }),
+  //             ],
+  //             alignment: AlignmentType.JUSTIFIED,
+  //             spacing: { after: 300 },
+  //           }));
+  //         }
+  //       }
+  //       return paragraphs;
+  //     };
+
+  //     // Create the document
+  //     const doc = new Document({
+  //       sections: [
+  //         {
+  //           properties: {
+  //             page: {
+  //               margin: {
+  //                 top: 720,    // 1 inch = 720 twips
+  //                 right: 720,
+  //                 bottom: 720,
+  //                 left: 720,
+  //               },
+  //             },
+  //           },
+  //           children: [
+  //             // PAGE 1 - Title Page
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: student.projectDetails?.projectName?.toUpperCase() || "",
+  //                   bold: true,
+  //                   size: 36,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "Project Report",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `Submitted in Partial fulfillment for the award of\n${
+  //                     student.collegeInfo?.course === "MCA"
+  //                       ? "Master of Computer Applications"
+  //                       : student.collegeInfo?.course === "BCA"
+  //                       ? "Bachelor of Computer Applications"
+  //                       : `${student.collegeInfo?.course} in ${student.collegeInfo?.branch}`
+  //                   }`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "DIGICODERS TECHNOLOGIES PVT. LTD.\nLUCKNOW(UP)",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+
+  //             // Add logos
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: digicodersLogo,
+  //                   transformation: {
+  //                     width: 200,
+  //                     height: 100,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             ...(collegeLogo ? [
+  //               new Paragraph({
+  //                 children: [
+  //                   new ImageRun({
+  //                     data: collegeLogo,
+  //                     transformation: {
+  //                       width: 200,
+  //                       height: 100,
+  //                     },
+  //                   }),
+  //                 ],
+  //                 alignment: AlignmentType.CENTER,
+  //                 spacing: { after: 400 },
+  //               })
+  //             ] : []),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `Session - ${student.collegeInfo?.session}`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 600 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: student.collegeInfo?.collegeName?.toUpperCase() || "",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+
+  //             // Submitted By/To sections
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `Submitted By: ${student.personalDetails?.name}`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `Submitted to: ${student.collegeInfo?.TeacherName}`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.RIGHT,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 2 - Certificate of Approval
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: digicodersLogo,
+  //                   transformation: {
+  //                     width: 400,
+  //                     height: 100,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "CERTIFICATE OF APPROVAL",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                   allCaps: true,
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `This is to certify that the project titled "${student.projectDetails?.projectName}" has been successfully completed by ${student.personalDetails?.name}, under the technical guidance and project development support of DigiCoders Technologies Pvt Ltd.`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.JUSTIFIED,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `The project work has been reviewed and evaluated by the technical team at Digicoders and is hereby approved as a valid and original project carried out in the field of ${
+  //                     student.collegeInfo?.course === "MCA"
+  //                       ? "Master of Computer Applications"
+  //                       : student.collegeInfo?.course === "BCA"
+  //                       ? "Bachelor of Computer Applications"
+  //                       : `${student.collegeInfo?.course} in ${student.collegeInfo?.branch}`
+  //                   }.`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.JUSTIFIED,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 3 - Declaration
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: digicodersLogo,
+  //                   transformation: {
+  //                     width: 400,
+  //                     height: 100,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "DECLARATION",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                   allCaps: true,
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `I hereby declare that the work presented in this Minor Project titled "${student.projectDetails?.projectName}" is the result of my own effort and is an original contribution to the field of ${
+  //                     student.collegeInfo?.course === "MCA"
+  //                       ? "Master of Computer Applications"
+  //                       : student.collegeInfo?.course === "BCA"
+  //                       ? "Bachelor of Computer Applications"
+  //                       : `${student.collegeInfo?.course} in ${student.collegeInfo?.branch}`
+  //                   }.`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.JUSTIFIED,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 4 - Acknowledgement
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: digicodersLogo,
+  //                   transformation: {
+  //                     width: 400,
+  //                     height: 100,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "ACKNOWLEDGEMENT",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                   allCaps: true,
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "The successful completion of this project would not have been possible without the support, guidance, and encouragement of several individuals and organizations. I would like to express my sincere gratitude to all those who contributed to this project.",
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.JUSTIFIED,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `First and foremost, I am extremely thankful to DigiCoders Technologies Pvt. Ltd., for providing me with the opportunity to work on this project. Their valuable resources, technical expertise, and continuous support throughout the development process played a crucial role in the successful completion of this work.`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.JUSTIFIED,
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 5 - Certificate Image
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: certificateImage,
+  //                   transformation: {
+  //                     width: 600,
+  //                     height: 800,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 6 - Index
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "INDEX",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                   allCaps: true,
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "1. Introduction\n" +
+  //                         "   1.1 Overview\n" +
+  //                         "   1.2 Background of the Project\n" +
+  //                         "   1.3 Objectives and Scope\n" +
+  //                         "   1.4 Intended Audience\n" +
+  //                         "   1.5 Problem Definition\n\n" +
+  //                         "2. Project Goals\n" +
+  //                         "   2.1 Purpose and Benefits\n" +
+  //                         "   2.2 Key Deliverables\n\n" +
+  //                         "3. System Analysis\n" +
+  //                         "   3.1 Objectives\n" +
+  //                         "   3.2 Development Methodology\n" +
+  //                         "   3.3 ER Diagram\n" +
+  //                         "   3.4 Data Flow Diagram\n\n" +
+  //                         "4. Core Features\n" +
+  //                         "5. Technology Stack\n" +
+  //                         "6. System Architecture\n" +
+  //                         "7. System Design Methodology\n" +
+  //                         "8. Backend Design\n" +
+  //                         "9. Data Modeling\n" +
+  //                         "10. Development Plan\n" +
+  //                         "11. Testing and Quality Assurance\n" +
+  //                         "12. User Experience and Interface\n" +
+  //                         "13. Conclusion",
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 7 - Introduction
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "1. Introduction",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.introduction),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 8 - Project Goals
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "2. Project Goals",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.projectGoals),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 9 - System Analysis
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "3. System Analysis",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.systemAnalysis),
+
+  //             // Add ER Diagram
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "3.3 ER Diagram",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: erDiagram,
+  //                   transformation: {
+  //                     width: 500,
+  //                     height: 300,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 600 },
+  //             }),
+
+  //             // Add DFD Diagram
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "3.4 Data Flow Diagram",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new ImageRun({
+  //                   data: dfdDiagram,
+  //                   transformation: {
+  //                     width: 500,
+  //                     height: 300,
+  //                   },
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 600 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 10 - Core Features
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "4. Core Features",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.coreFeatures),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 11 - Technology Stack
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "5. Technology Stack",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "5.1 Frontend Technologies",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `• ${student.projectDetails?.frontendTechnology}`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "5.2 Backend Technologies",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `• ${student.projectDetails?.backendTechnology}`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "5.3 Database Solutions",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: `• ${student.projectDetails?.database}`,
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { after: 400 },
+  //             }),
+
+  //             // System Architecture
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "6. System Architecture",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { before: 800, after: 800 },
+  //             }),
+  //             ...parseContentSection(content.systemArchitecture),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 12 - System Design
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "7. System Design Methodology",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.systemDesign),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 13 - Backend Design
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "8. Backend Design",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.backendDesign),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 14 - Data Modeling
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "9. Data Modeling",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.dataModeling),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 15 - Development Plan
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "10. Development Plan",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "10.1 Phases of Development",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "1. Requirements\n2. UI/UX Design\n3. Backend Logic\n4. PDF Export\n5. Testing\n6. Deployment",
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { after: 600 },
+  //             }),
+
+  //             // Testing and Quality Assurance
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "11. Testing and Quality Assurance",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { before: 800, after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "11.1 Testing Strategies",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "Manual Testing, Unit Tests for critical components.",
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.JUSTIFIED,
+  //               spacing: { after: 600 },
+  //             }),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 16 - User Experience and Interface
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "12. User Experience and Interface",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "12.1 Design Principles",
+  //                   bold: true,
+  //                   size: 28,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { before: 600, after: 400 },
+  //             }),
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "• User-friendly\n• Mobile Responsive Design\n• Clean interface using Bootstrap\n• Intuitive navigation\n• Consistent design language",
+  //                   size: 24,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               spacing: { after: 600 },
+  //             }),
+
+  //             // Add UI Screenshots if available
+  //             ...(student.projectAssets?.uiScreenshots ?
+  //               await Promise.all(student.projectAssets.uiScreenshots.slice(0, 3).map(async (ui, index) => {
+  //                 const imageData = await getImageAsBase64(ui.url);
+  //                 return new Paragraph({
+  //                   children: [
+  //                     new ImageRun({
+  //                       data: imageData,
+  //                       transformation: {
+  //                         width: 400,
+  //                         height: 300,
+  //                       },
+  //                     }),
+  //                   ],
+  //                   alignment: AlignmentType.CENTER,
+  //                   spacing: { after: 400 },
+  //                 });
+  //               })) : []
+  //             ),
+
+  //             // Page Break
+  //             new Paragraph({
+  //               children: [new PageBreak()],
+  //             }),
+
+  //             // PAGE 17 - Conclusion
+  //             new Paragraph({
+  //               children: [
+  //                 new TextRun({
+  //                   text: "13. Conclusion",
+  //                   bold: true,
+  //                   size: 32,
+  //                   font: "Times New Roman",
+  //                 }),
+  //               ],
+  //               alignment: AlignmentType.CENTER,
+  //               spacing: { after: 800 },
+  //             }),
+  //             ...parseContentSection(content.conclusion),
+  //           ],
+  //         },
+  //       ],
+  //     });
+
+  //     // Generate and save the document
+  //     const buffer = await Packer.toBuffer(doc);
+  //     const fileName = `${student.projectDetails?.projectName || "Project"}_Report.docx`;
+
+  //     saveAs(new Blob([buffer]), fileName);
+
+  //   } catch (error) {
+  //     console.error("Error generating Word document:", error);
+  //     alert("Error generating Word document. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   if (!student)
     return (
       <div className="p-5 flex justify-center h-screen items-center">
@@ -448,7 +1479,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
   return (
     <div className="p-5 space-y-4 ">
       <span
-        className={`  h-1 shadow-indigo-400 shadow bg-indigo-500 absolute top-0 left-0`}
+        className={`h-1 shadow-indigo-400 shadow bg-indigo-500 absolute top-0 left-0`}
         style={{ width: `${progress}%` }}
       ></span>
       <div className="flex justify-center">
@@ -458,7 +1489,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
               if (window.history.length > 1) {
                 router.back();
               } else {
-                router.push("/dashboard"); 
+                router.push("/dashboard");
               }
             }}
             className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -474,12 +1505,15 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
           >
             Print
           </button>
-          <button
-            onClick={retryFailedSections}
-            className="bg-green-500 text-white px-4 py-2 rounded"
+          {/* <button
+            onClick={handleDownloadWord}
+            disabled={isdisabled || loading}
+            className={`bg-green-500 text-white px-4 py-2 rounded ${
+              isdisabled || loading ? "bg-gray-400 cursor-not-allowed" : ""
+            }`}
           >
-            {loading ? "Retrying..." : "Retry Failed Sections"}
-          </button>
+            {loading ? "Generating..." : "Download Word"}
+          </button> */}
         </div>
       </div>
 
@@ -751,10 +1785,14 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
           <p className="mb-4 text-justify">
             This approval acknowledges that the project has been prepared with
             proper effort, guidance, and technical support. However, it does not
-            imply that <strong className="uppercase"> Digicoders Technologies Pvt. Ltd.</strong> endorses or agrees with
-            every opinion, conclusion, or interpretation expressed in the
-            project report. The project is accepted solely for academic
-            evaluation purposes.
+            imply that{" "}
+            <strong className="uppercase">
+              {" "}
+              Digicoders Technologies Pvt. Ltd.
+            </strong>{" "}
+            endorses or agrees with every opinion, conclusion, or interpretation
+            expressed in the project report. The project is accepted solely for
+            academic evaluation purposes.
           </p>
           <p className="mb-4 text-justify">
             We commend{" "}
@@ -914,11 +1952,14 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
           <p className="mb-4 text-justify">
             First and foremost, I am extremely thankful to{" "}
-            <strong className="uppercase"> Digicoders Technologies Pvt. Ltd.</strong>, for providing
-            me with the opportunity to work on this project. Their valuable
-            resources, technical expertise, and continuous support throughout
-            the development process played a crucial role in the successful
-            completion of this work.
+            <strong className="uppercase">
+              {" "}
+              Digicoders Technologies Pvt. Ltd.
+            </strong>
+            , for providing me with the opportunity to work on this project.
+            Their valuable resources, technical expertise, and continuous
+            support throughout the development process played a crucial role in
+            the successful completion of this work.
           </p>
 
           <p className="mb-4 text-justify">
@@ -944,12 +1985,16 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
           <p className="mb-4 text-justify">
             I am also grateful to all the faculty members and staff of the
-            <strong className="uppercase"> Digicoders Technologies Pvt. Ltd.</strong> for their
-            support, cooperation, and encouragement during the project
+            <strong className="uppercase">
+              {" "}
+              Digicoders Technologies Pvt. Ltd.
+            </strong>{" "}
+            for their support, cooperation, and encouragement during the project
             development.
           </p>
           <p className="mb-4 text-justify">
-            A special thanks to <strong className="uppercase">Er. Himanshu Kashyap,</strong> for his
+            A special thanks to{" "}
+            <strong className="uppercase">Er. Himanshu Kashyap,</strong> for his
             consistent mentorship, motivation, and insightful feedback, which
             helped me overcome challenges and guided me in the right direction.
           </p>
@@ -984,19 +2029,43 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
           style={{ pageBreakAfter: "always" }}
         >
           <div className=" relative">
-<div className=" absolute top-[17%] left-[70%] font-bold bg-white uppercase font-sans">{student?.personalDetails?.certificateNumber}</div>
-<div className=" absolute top-[17%] left-[24%] font-bold bg-white uppercase font-sans">{student?.createdAt?.split("T")[0]}</div>
-<div className=" absolute top-[49.5%] left-[30%] font-bold uppercase font-sans">{student.personalDetails?.name}</div>
-<div className=" absolute top-[57%] left-[20%] font-bold uppercase font-sans">{student.projectDetails?.TrainingType}</div>
-<div className=" absolute bottom-[37%] left-[20%] font-bold uppercase font-sans">{student.projectDetails?.backendTechnology}</div>
-<div className=" absolute bottom-[37%] right-[17%] font-bold uppercase font-sans">" A++ "</div>
-<div className=" absolute bottom-[33%] left-[25%] font-bold uppercase font-sans">{student.projectDetails?.duration}</div>
-<div className=" absolute bottom-[33%] left-[50%] font-bold uppercase font-sans">{student.projectDetails?.StartDate}</div>
-<div className=" absolute bottom-[33%] right-[15%] font-bold uppercase font-sans">{student.projectDetails?.EndDate}</div>
-<div className=" absolute bottom-[23%] right-[42%] font-bold uppercase font-sans"><img src="/img/mohar.png" width={100} alt="" /></div>
-<div className=" absolute bottom-[26%] right-[22%] font-bold uppercase font-sans"><img src="/img/gopalsir.png" width={100} alt="" /></div>
-<div className=" absolute bottom-[26%] left-[20%] font-bold uppercase font-sans"><img src="/img/himanshusir.png" width={100} alt="" /></div>
-          <img src="/img/Certificate.jpg" alt="" />
+            <div className=" absolute top-[17%] left-[70%] font-bold bg-white uppercase font-sans">
+              {student?.personalDetails?.certificateNumber}
+            </div>
+            <div className=" absolute top-[17%] left-[24%] font-bold bg-white uppercase font-sans">
+              {student?.createdAt?.split("T")[0]}
+            </div>
+            <div className=" absolute top-[49.5%] left-[30%] font-bold uppercase font-sans">
+              {student.personalDetails?.name}
+            </div>
+            <div className=" absolute top-[57%] left-[20%] font-bold uppercase font-sans">
+              {student.projectDetails?.TrainingType}
+            </div>
+            <div className=" absolute bottom-[37%] left-[20%] font-bold uppercase font-sans">
+              {student.projectDetails?.backendTechnology}
+            </div>
+            <div className=" absolute bottom-[37%] right-[17%] font-bold uppercase font-sans">
+              " A++ "
+            </div>
+            <div className=" absolute bottom-[33%] left-[25%] font-bold uppercase font-sans">
+              {student.projectDetails?.duration}
+            </div>
+            <div className=" absolute bottom-[33%] left-[50%] font-bold uppercase font-sans">
+              {student.projectDetails?.StartDate}
+            </div>
+            <div className=" absolute bottom-[33%] right-[15%] font-bold uppercase font-sans">
+              {student.projectDetails?.EndDate}
+            </div>
+            <div className=" absolute bottom-[23%] right-[42%] font-bold uppercase font-sans">
+              <img src="/img/mohar.png" width={100} alt="" />
+            </div>
+            <div className=" absolute bottom-[26%] right-[22%] font-bold uppercase font-sans">
+              <img src="/img/gopalsir.png" width={100} alt="" />
+            </div>
+            <div className=" absolute bottom-[26%] left-[20%] font-bold uppercase font-sans">
+              <img src="/img/himanshusir.png" width={100} alt="" />
+            </div>
+            <img src="/img/Certificate.jpg" alt="" />
           </div>
         </div>
 

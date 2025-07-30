@@ -377,7 +377,7 @@ export default function EditStudentPage() {
         Loading...
       </div>
     );
-  console.log(form);
+
 
   return (
     <div className="max-w-7xl mx-auto p-5 space-y-6 dark:bg-gray-950">

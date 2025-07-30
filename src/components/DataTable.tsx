@@ -26,6 +26,7 @@ export default function DataTable({
 }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingbtn, setLoadingbtn] = useState("");
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
@@ -56,6 +57,7 @@ export default function DataTable({
   );
 
   const handleDelete = async (id: string) => {
+    setLoadingbtn(id)
     if (!confirm("Are you sure you want to delete this student?")) return;
 
     try {
@@ -65,9 +67,11 @@ export default function DataTable({
     } catch {
       alert("Failed to delete student");
     }
+    setLoadingbtn("")
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
+    setLoadingbtn(id)
     try {
       const res = await fetch(`/api/students/${id}/status`, {
         method: "PUT",
@@ -79,6 +83,7 @@ export default function DataTable({
     } catch {
       alert("Failed to update status");
     }
+     setLoadingbtn("")
   };
 
 
@@ -108,10 +113,10 @@ export default function DataTable({
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
               <th className="p-2 border w-[10%]">Project_Id</th>
-              <th className="p-2 border w-[20%]">Name</th>
+              <th className="p-2 border w-[12%]">Name</th>
               <th className="p-2 border w-[40%]">Collage Name</th>
               <th className="p-2 border w-[10%]">Phone</th>
-              <th className="p-2 border w-[20%]">Actions</th>
+              <th className="p-2 border w-[28%]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -131,8 +136,8 @@ export default function DataTable({
                 </td>
                 <td className="p-2 border space-x-2 w-[20%]">
                   <Link href={`/dashboard/view/${student._id}`}>
-                    <button className="bg-blue-500 text-white px-2 py-1 rounded">
-                      Edit
+                    <button onClick={()=>setLoadingbtn(student._id)} className="bg-blue-500 text-white px-2 py-1 rounded">
+                       {loadingbtn === student._id ? "Edit...":"Edit"}
                     </button>
                   </Link>
                   {status === "reject" && (
@@ -140,7 +145,7 @@ export default function DataTable({
                       onClick={() => handleDelete(student._id)}
                       className="bg-red-500 text-white px-2 py-1 rounded"
                     >
-                      Delete
+                       {loadingbtn === student._id ? "Deleteing...":"Delete"}
                     </button>
                   )}
                   {status === "new" && (
@@ -151,7 +156,7 @@ export default function DataTable({
                         }
                         className="bg-purple-500 text-white px-2 py-1 rounded"
                       >
-                        Accept
+                         {loadingbtn === student._id ? "Accepting...":"Accept"}
                       </button>
                       <button
                         onClick={() =>
@@ -159,7 +164,7 @@ export default function DataTable({
                         }
                         className="bg-yellow-500 text-white px-2 py-1 rounded"
                       >
-                        Reject
+                        {loadingbtn === student._id ? "Rejecting...":"Reject"}
                       </button>
                     </>
                   )}
@@ -179,7 +184,7 @@ export default function DataTable({
                         }
                         className="bg-yellow-500 text-white px-2 py-1 rounded"
                       >
-                        Reject
+                         {loadingbtn === student._id ? "Rejecting...":"Reject"}
                       </button>
                     </>
                   )}
