@@ -4,20 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
-
-// Add this import at the top with your other imports
-// import html2canvas from "html2canvas";
-// import {
-//   Document,
-//   Packer,
-//   Paragraph,
-//   TextRun,
-//   ImageRun,
-//   HeadingLevel,
-//   AlignmentType,
-//   PageBreak,
-// } from "docx";
-import { saveAs } from "file-saver";
 interface Student {
   id: string;
   createdAt: string;
@@ -483,7 +469,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
       // Small delay between requests
       if (i < sectionsGroup1.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     }
   };
@@ -499,7 +485,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       await generateContentApi1(key, prompt, API_KEYS[1]);
       // Small delay between requests
       if (i < sectionsGroup2.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     }
   };
@@ -516,7 +502,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
       // Small delay between requests
       if (i < sectionsGroup3.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     }
 
@@ -541,6 +527,10 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
     if (completedSections === totalSections) setisdisabled(false);
   }, [completedSections]);
 
+
+
+
+  
   // Enhanced Word Document Generation Function
   // const handleDownloadWord = async () => {
   //   if (!student) return;

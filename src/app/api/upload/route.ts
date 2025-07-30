@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const folder = formData.get("folder") as string || "general";
+    // const folder = formData.get("folder") as string || "general";
     const publicId = formData.get("publicId") as string | null;
 
     if (!file) {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     const uploadOptions = {
-      folder: `student-portal/${folder}`,
+      folder: `student-portal`,
       ...(publicId && { public_id: publicId }), // For updates
       overwrite: !!publicId, // Allow overwriting existing files
       invalidate: true // Refresh CDN cache
