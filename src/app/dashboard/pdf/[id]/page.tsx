@@ -2620,7 +2620,7 @@ useEffect(() => {
                 <p>{content?.systemAnalysis.split("**")[4]}</p>
               </>
             ) : (
-              <p>Loading Project Goals content...</p>
+              <p>Loading  System Analysis content...</p>
             )}
           </div>
         </div>
@@ -2683,7 +2683,7 @@ useEffect(() => {
                 <p>{content?.coreFeatures.split("**")[10]}</p>
               </>
             ) : (
-              <p>Loading Project Goals content...</p>
+              <p>Loading Core Features content...</p>
             )}
           </div>
         </div>
@@ -2743,7 +2743,7 @@ useEffect(() => {
                 <p>{content?.systemArchitecture?.split("**")[14]}</p>
               </>
             ) : (
-              <p>Loading Project Goals content...</p>
+              <p>Loading System Architecture content...</p>
             )}
           </div>
         </div>
@@ -2789,7 +2789,7 @@ useEffect(() => {
                 <p>{content?.systemDesign?.split("**")[16]}</p>
               </>
             ) : (
-              <p>Loading system Design content...</p>
+              <p>Loading System Design Methodology content...</p>
             )}
           </div>
         </div>
@@ -2815,7 +2815,7 @@ useEffect(() => {
                 <p>{content?.backendDesign?.split("**")[6]}</p>
               </>
             ) : (
-              <p>Loading system Design content...</p>
+              <p>Loading Backend Design content...</p>
             )}
           </div>
         </div>
@@ -2877,7 +2877,7 @@ useEffect(() => {
                 <p>{content?.dataModeling?.split("**")[24]}</p>
               </>
             ) : (
-              <p>Loading system Design content...</p>
+              <p>Loading Data Modeling content...</p>
             )}
           </div>
         </div>
@@ -2972,7 +2972,7 @@ useEffect(() => {
                 <p>{content?.conclusion?.split("**")[4]}</p>
               </>
             ) : (
-              <p>Loading system Design content...</p>
+              <p>Loading Conclusion content...</p>
             )}
           </div>
         </div>
