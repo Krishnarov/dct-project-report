@@ -39,7 +39,7 @@ export interface IStudentForm extends Document {
     erDiagram: { url: string; public_id: string };
   };
   currentStep: number;
-  isPrint: boolean;
+  isPrint: number;
   status: "new" | "accept" | "reject";
 }
 
@@ -82,7 +82,7 @@ const StudentFormSchema = new Schema<IStudentForm>(
       erDiagram: { url: { type: String }, public_id: { type: String } },
     },
     currentStep: { type: Number, default: 1 },
-    isPrint: { type: Boolean, default: false },
+    isPrint: { type: Number },
     status: { type: String, enum: ["new", "accept", "reject"], default: "new" },
   },
   { timestamps: true }

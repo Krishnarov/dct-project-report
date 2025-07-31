@@ -4,6 +4,7 @@ import Link from "next/link";
 
 interface Student {
   _id: string;
+  isPrint: number;
   personalDetails?: {
     name: string;
     email: string;
@@ -57,7 +58,7 @@ export default function DataTable({
   );
 
   const handleDelete = async (id: string) => {
-    setLoadingbtn(id)
+    setLoadingbtn(`delete-${id}`)
     if (!confirm("Are you sure you want to delete this student?")) return;
 
     try {
@@ -71,7 +72,7 @@ export default function DataTable({
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    setLoadingbtn(id)
+    setLoadingbtn(`${newStatus}-${id}`)
     try {
       const res = await fetch(`/api/students/${id}/status`, {
         method: "PUT",
@@ -145,7 +146,7 @@ export default function DataTable({
                       onClick={() => handleDelete(student._id)}
                       className="bg-red-500 text-white px-2 py-1 rounded"
                     >
-                       {loadingbtn === student._id ? "Deleteing...":"Delete"}
+                       {loadingbtn === `delete-${student._id}` ? "Deleteing...":"Delete"}
                     </button>
                   )}
                   {status === "new" && (
@@ -156,7 +157,7 @@ export default function DataTable({
                         }
                         className="bg-purple-500 text-white px-2 py-1 rounded"
                       >
-                         {loadingbtn === student._id ? "Accepting...":"Accept"}
+                         {loadingbtn === `accept-${student._id}` ? "Accepting...":"Accept"}
                       </button>
                       <button
                         onClick={() =>
@@ -164,7 +165,7 @@ export default function DataTable({
                         }
                         className="bg-yellow-500 text-white px-2 py-1 rounded"
                       >
-                        {loadingbtn === student._id ? "Rejecting...":"Reject"}
+                        {loadingbtn === `reject-${student._id}` ? "Rejecting...":"Reject"}
                       </button>
                     </>
                   )}
@@ -174,8 +175,8 @@ export default function DataTable({
                         href={`/dashboard/pdf/${student._id}`}
                         target="_blank"
                       >
-                        <button className="bg-green-500 text-white px-2 py-1 rounded">
-                          PDF
+                        <button className="bg-green-500 text-white px-2 py-1 rounded ">
+                          PDF <span className="text-xs font-bold bg-green-300 text-orange-600 rounded-full z-10 px-1  ">{student?.isPrint}</span>
                         </button>
                       </Link>
                       <button
@@ -184,7 +185,7 @@ export default function DataTable({
                         }
                         className="bg-yellow-500 text-white px-2 py-1 rounded"
                       >
-                         {loadingbtn === student._id ? "Rejecting...":"Reject"}
+                         {loadingbtn === `reject-${student._id}` ? "Rejecting...":"Reject"}
                       </button>
                     </>
                   )}

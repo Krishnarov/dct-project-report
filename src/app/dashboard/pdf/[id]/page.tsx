@@ -78,8 +78,12 @@ export default function PDFPage() {
   const api1 = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const api2 = process.env.NEXT_PUBLIC_GEMINI_API_KEY1;
   const api3 = process.env.NEXT_PUBLIC_GEMINI_API_KEY2;
-
-  const API_KEYS = [api1, api2, api3];
+  const api4 = process.env.NEXT_PUBLIC_GEMINI_API_KEY3;
+  const api5 = process.env.NEXT_PUBLIC_GEMINI_API_KEY4;
+  const api6 = process.env.NEXT_PUBLIC_GEMINI_API_KEY5;
+  const api7 = process.env.NEXT_PUBLIC_GEMINI_API_KEY6;
+  const api8 = process.env.NEXT_PUBLIC_GEMINI_API_KEY7;
+  const api9 = process.env.NEXT_PUBLIC_GEMINI_API_KEY8;
 
   useEffect(() => {
     fetch(`/api/students/${studentId}`)
@@ -144,12 +148,37 @@ export default function PDFPage() {
 
     // Trigger print
     window.print();
-
+    handlePrintIncrement();
     // Clean up after printing
     setTimeout(() => {
       document.head.removeChild(styleElement);
     }, 1000);
   };
+  // React/Next.js में API call का उदाहरण
+const handlePrintIncrement = async () => {
+  try {
+    const response = await fetch(`/api/students/${studentId}/print`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to increment print count');
+    }
+
+    const data = await response.json();
+    console.log('Print count updated:', data.student);
+    return data.student; // Updated student data
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+};
+
+// उपयोग करने का तरीका
+// handlePrintIncrement('65d5f8e9c4b8d1a9f7d3f2a1');
 
   const getPromptTemplates = (student: Student) => {
     const { projectName, backendTechnology, frontendTechnology, database } =
@@ -287,11 +316,10 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       },
     ];
   };
-  // Generate content function
-  const generateContentApi2 = async (
-    section: string,
+
+ // Generate content function introduction
+  const generateIntroductionApi = async (
     prompt: string,
-    apiKey: string
   ) => {
     try {
       const requestData = {
@@ -315,7 +343,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       };
 
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api1}`,
         requestData,
         {
           timeout: 30000,
@@ -327,27 +355,25 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
       if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
         const generatedText = response.data.candidates[0].content.parts[0].text;
-        setContent((prev) => ({ ...prev, [section]: generatedText }));
+        setContent((prev) => ({ ...prev, introduction: generatedText }));
         setCompletedSections((prev) => prev + 1);
         return true;
       } else {
         throw new Error("Invalid response format");
       }
     } catch (error) {
-      console.error(`Error generating ${section}:`, error);
+      console.error(`Error generating introduction:`, error);
       setContent((prev) => ({
         ...prev,
-        [section]: `Error generating content for ${section}. Please try again.`,
+        introduction: `Error generating content for introduction. Please try again.`,
       }));
       setCompletedSections((prev) => prev + 1);
       return false;
     }
   };
-  // Generate content function
-  const generateContentApi1 = async (
-    section: string,
+ // Generate content function projectGoals
+  const generateProjectGoalsApi = async (
     prompt: string,
-    apiKey: string
   ) => {
     try {
       const requestData = {
@@ -371,7 +397,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       };
 
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api2}`,
         requestData,
         {
           timeout: 30000,
@@ -383,27 +409,26 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
       if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
         const generatedText = response.data.candidates[0].content.parts[0].text;
-        setContent((prev) => ({ ...prev, [section]: generatedText }));
+        setContent((prev) => ({ ...prev, projectGoals: generatedText }));
         setCompletedSections((prev) => prev + 1);
         return true;
       } else {
         throw new Error("Invalid response format");
       }
     } catch (error) {
-      console.error(`Error generating ${section}:`, error);
+      console.error(`Error generating projectGoals:`, error);
       setContent((prev) => ({
         ...prev,
-        [section]: `Error generating content for ${section}. Please try again.`,
+        projectGoals: `Error generating content for projectGoals. Please try again.`,
       }));
       setCompletedSections((prev) => prev + 1);
       return false;
     }
   };
-  // Generate content function
-  const generateContent = async (
-    section: string,
+
+ // Generate content function systemAnalysis
+  const generateSystemAnalysisApi = async (
     prompt: string,
-    apiKey: string
   ) => {
     try {
       const requestData = {
@@ -427,7 +452,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
       };
 
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api3}`,
         requestData,
         {
           timeout: 30000,
@@ -439,98 +464,457 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
 
       if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
         const generatedText = response.data.candidates[0].content.parts[0].text;
-        setContent((prev) => ({ ...prev, [section]: generatedText }));
+        setContent((prev) => ({ ...prev, systemAnalysis: generatedText }));
         setCompletedSections((prev) => prev + 1);
         return true;
       } else {
         throw new Error("Invalid response format");
       }
     } catch (error) {
-      console.error(`Error generating ${section}:`, error);
+      console.error(`Error generating systemAnalysis:`, error);
       setContent((prev) => ({
         ...prev,
-        [section]: `Error generating content for ${section}. Please try again.`,
+        systemAnalysis: `Error generating content for systemAnalysis. Please try again.`,
       }));
       setCompletedSections((prev) => prev + 1);
       return false;
     }
   };
-  // Generate content for API 1 (first 3 sections)
-  const generateContent1 = async () => {
-    if (!student?.projectDetails || !API_KEYS[0]) return;
+ // Generate content function coreFeatures
+  const generateCoreFeaturesApi = async (
+    prompt: string,
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
 
-    setLoading(true);
-    const sections = getPromptTemplates(student);
-    const sectionsGroup1 = sections.slice(0, 3); // introduction, projectGoals, systemAnalysis
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api4}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    for (let i = 0; i < sectionsGroup1.length; i++) {
-      const { key, prompt } = sectionsGroup1[i];
-      await generateContent(key, prompt, API_KEYS[0]);
-
-      // Small delay between requests
-      if (i < sectionsGroup1.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, coreFeatures: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
       }
+    } catch (error) {
+      console.error(`Error generating coreFeatures:`, error);
+      setContent((prev) => ({
+        ...prev,
+        coreFeatures: `Error generating content for coreFeatures. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
     }
   };
-  // Generate content for API 2 (next 3 sections)
-  const generateContent2 = async () => {
-    if (!student?.projectDetails || !API_KEYS[1]) return;
 
-    const sections = getPromptTemplates(student);
-    const sectionsGroup2 = sections.slice(3, 6); // coreFeatures, systemArchitecture, systemDesign
+ // Generate content function systemArchitecture
+  const generateSystemArchitectureApi = async (
+    prompt: string,
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
 
-    for (let i = 0; i < sectionsGroup2.length; i++) {
-      const { key, prompt } = sectionsGroup2[i];
-      await generateContentApi1(key, prompt, API_KEYS[1]);
-      // Small delay between requests
-      if (i < sectionsGroup2.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api5}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, systemArchitecture: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
       }
+    } catch (error) {
+      console.error(`Error generating systemArchitecture:`, error);
+      setContent((prev) => ({
+        ...prev,
+        systemArchitecture: `Error generating content for systemArchitecture. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
     }
   };
-  // Generate content for API 3 (last 3 sections)
-  const generateContent3 = async () => {
-    if (!student?.projectDetails || !API_KEYS[2]) return;
+ // Generate content function systemDesign
+  const generateSystemDesignApi = async (
+    prompt: string,
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
 
-    const sections = getPromptTemplates(student);
-    const sectionsGroup3 = sections.slice(6, 9); // backendDesign, dataModeling, conclusion
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api6}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    for (let i = 0; i < sectionsGroup3.length; i++) {
-      const { key, prompt } = sectionsGroup3[i];
-      await generateContentApi2(key, prompt, API_KEYS[2]);
-
-      // Small delay between requests
-      if (i < sectionsGroup3.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, systemDesign: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
       }
+    } catch (error) {
+      console.error(`Error generating systemDesign:`, error);
+      setContent((prev) => ({
+        ...prev,
+        systemDesign: `Error generating content for systemDesign. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
     }
+  };
+ // Generate content function backendDesign
+  const generateBackendDesignApi = async (
+    prompt: string,
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
 
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api7}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, backendDesign: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (error) {
+      console.error(`Error generating backendDesign:`, error);
+      setContent((prev) => ({
+        ...prev,
+        backendDesign: `Error generating content for backendDesign. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
+    }
+  };
+ // Generate content function dataModeling
+  const generateDataModelingApi = async (
+    prompt: string,
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
+
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api8}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, dataModeling: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (error) {
+      console.error(`Error generating dataModeling:`, error);
+      setContent((prev) => ({
+        ...prev,
+        dataModeling: `Error generating content for dataModeling. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
+    }
+  };
+ // Generate content function conclusion
+  const generateConclusionApi = async (
+    prompt: string,
+  ) => {
+    try {
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  prompt +
+                  "\n\nPlease provide a detailed, professional response in markdown format.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
+
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${api9}`,
+        requestData,
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        const generatedText = response.data.candidates[0].content.parts[0].text;
+        setContent((prev) => ({ ...prev, conclusion: generatedText }));
+        setCompletedSections((prev) => prev + 1);
+        return true;
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (error) {
+      console.error(`Error generating conclusion:`, error);
+      setContent((prev) => ({
+        ...prev,
+        conclusion: `Error generating content for conclusion. Please try again.`,
+      }));
+      setCompletedSections((prev) => prev + 1);
+      return false;
+    }
+  };
+
+
+
+
+
+
+
+
+
+// Individual section generation functions
+const generateIntroduction = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "introduction")?.prompt || "";
+  return generateIntroductionApi(prompt);
+};
+
+const generateProjectGoals = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "projectGoals")?.prompt || "";
+  return generateProjectGoalsApi( prompt);
+};
+
+const generateSystemAnalysis = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "systemAnalysis")?.prompt || "";
+  return generateSystemAnalysisApi(prompt);
+};
+
+const generateCoreFeatures = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "coreFeatures")?.prompt || "";
+  return generateCoreFeaturesApi( prompt);
+};
+
+const generateSystemArchitecture = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "systemArchitecture")?.prompt || "";
+  return generateSystemArchitectureApi( prompt);
+};
+
+const generateSystemDesign = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "systemDesign")?.prompt || "";
+  return generateSystemDesignApi( prompt);
+};
+
+const generateBackendDesign = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "backendDesign")?.prompt || "";
+  return generateBackendDesignApi(prompt);
+};
+
+const generateDataModeling = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "dataModeling")?.prompt || "";
+  return generateDataModelingApi(prompt);
+};
+
+const generateConclusion = async () => {
+  if (!student?.projectDetails) return;
+  const prompt = getPromptTemplates(student).find(p => p.key === "conclusion")?.prompt || "";
+  return generateConclusionApi(prompt);
+};
+// Main generation function that calls all section generators
+const generateAllContent = async () => {
+  setLoading(true);
+  
+  try {
+    // Run all generation functions in sequence
+    await generateIntroduction();
+    await generateProjectGoals();
+    await generateSystemAnalysis();
+    await generateCoreFeatures();
+    await generateSystemArchitecture();
+    await generateSystemDesign();
+    await generateBackendDesign();
+    await generateDataModeling();
+    await generateConclusion();
+  } catch (error) {
+    console.error("Error in content generation:", error);
+  } finally {
     setLoading(false);
-  };
-  // Updated useEffect to call three separate functions
-  useEffect(() => {
-    if (student?.projectDetails && API_KEYS.every((key) => key)) {
-      generateContent1();
-      generateContent2();
-      generateContent3();
-    } else {
-      console.warn("Missing required data:", {
-        hasStudent: !!student?.projectDetails,
-        hasAllApiKeys: API_KEYS.every((key) => key),
-      });
-    }
-  }, [student?.projectDetails?.projectName]);
+  }
+};
+
+
+// Update your useEffect to call generateAllContent
+useEffect(() => {
+  if (student?.projectDetails) {
+    generateAllContent();
+  } else {
+    console.warn("Missing required data:", {
+      hasStudent: !!student?.projectDetails,
+    });
+  }
+}, [student?.projectDetails?.projectName]);
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     setProgress(Math.round((completedSections / totalSections) * 100));
     if (completedSections === totalSections) setisdisabled(false);
   }, [completedSections]);
 
-
-
-
-  
   // Enhanced Word Document Generation Function
   // const handleDownloadWord = async () => {
   //   if (!student) return;
@@ -1465,6 +1849,7 @@ Summarize the overall success of ${projectName} and provide a roadmap for future
         Loading...
       </div>
     );
+// console.log(student);
 
   return (
     <div className="p-5 space-y-4 ">

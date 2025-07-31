@@ -558,7 +558,7 @@ export default function EditStudentPage() {
                   College Logo
                 </label>
                 <div className="flex items-center gap-4">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors relative">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:dark:bg-gray-700 hover:bg-gray-100 transition-colors relative">
                     {form.collegeInfo?.collegeLogo?.url ? (
                       <>
                         <img
