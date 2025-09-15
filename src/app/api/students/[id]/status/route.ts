@@ -13,7 +13,7 @@ export async function PUT(
   await connectDB();
   const { status } = await request.json();
 
-  if (!["new", "accept", "reject"].includes(status)) {
+  if (!["new", "accept", "reject","isSendToPrint","isSendToStudent"].includes(status)) {
     return Response.json({ message: "Invalid status" }, { status: 400 });
   }
 

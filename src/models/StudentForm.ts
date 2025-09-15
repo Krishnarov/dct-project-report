@@ -40,7 +40,7 @@ export interface IStudentForm extends Document {
   };
   currentStep: number;
   isPrint: number;
-  status: "new" | "accept" | "reject";
+  status: "new" | "accept" | "reject" | "isSendToPrint" | "isSendToStudent";
 }
 
 const StudentFormSchema = new Schema<IStudentForm>(
@@ -83,7 +83,7 @@ const StudentFormSchema = new Schema<IStudentForm>(
     },
     currentStep: { type: Number, default: 1 },
     isPrint: { type: Number },
-    status: { type: String, enum: ["new", "accept", "reject"], default: "new" },
+    status: { type: String, enum: ["new", "accept", "reject" ,"isSendToPrint","isSendToStudent"], default: "new" },
   },
   { timestamps: true }
 );

@@ -5,16 +5,16 @@ import Link from "next/link";
 import LoginPage from "@/components/login";
 import DataTable from "@/components/DataTable";
 import DashboardLayout from "@/components/Dashboardlayout";
-// interface Student {
-//   _id: string;
-//   personalDetails?: {
-//     name: string;
-//     email: string;
-//     phone: string;
-//     enrollmentNumber?: string;
-//   };
-//   status?: string;
-// }
+interface Student {
+  _id: string;
+  personalDetails?: {
+    name: string;
+    email: string;
+    phone: string;
+    enrollmentNumber?: string;
+  };
+  status?: string;
+}
 
 export default function NewStudent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -37,7 +37,7 @@ export default function NewStudent() {
 
   return (
     <DashboardLayout>
-      <DataTable title="Rejected Students" status="reject" />
+      <DataTable title="Report Send To Students" status="isSendToStudent" />
     </DashboardLayout>
   );
 }
