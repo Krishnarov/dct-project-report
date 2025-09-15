@@ -37,6 +37,7 @@ export default function Sidebar({ active }: SidebarProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("token");
     router.replace("/login");
   };
 

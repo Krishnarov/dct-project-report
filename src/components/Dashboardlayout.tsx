@@ -15,6 +15,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn");
+    const token = localStorage.getItem("isLoggedIn");
     if (loggedIn !== "true") {
       router.replace("/login"); // agar login nahi hai to redirect
     } else {
@@ -25,9 +26,9 @@ export default function DashboardLayout({
   if (!isLoggedIn) return null; // jab tak check ho raha hai, kuch render na karo
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-gray-100 dark:bg-gray-950">
       {/* Sidebar */}
-      <div className="fixed top-0 left-0 z-50 w-64 bg-white text-black h-screen shadow p-4">
+      <div className="fixed top-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 dark:text-white text-black h-screen shadow p-4">
         <Sidebar active={pathname || ""} />
       </div>
 

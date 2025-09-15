@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useState, ChangeEvent, FormEvent } from "react";
 
 interface Props {
@@ -13,9 +14,16 @@ export default function LoginPage({ onLogin }: Props) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (form.email === "admin@gmail.com" && form.password === "admin123") {
+    const res = await axios.post(`/api/auth/login`, {
+      email: form.email,
+      password: form.password,
+    });
+    console.log(res);
+
+    if (res.data.success) {
+      localStorage.setItem("token", res.data.token);
       onLogin();
     } else {
       alert("Invalid credentials");
@@ -28,10 +36,14 @@ export default function LoginPage({ onLogin }: Props) {
         onSubmit={handleSubmit}
         className="bg-white dark:bg-gray-800 shadow-md rounded px-8 py-6 w-full max-w-sm space-y-4"
       >
-        <h2 className="text-2xl font-bold text-center mb-4 dark:text-gray-100">Login</h2>
+        <h2 className="text-2xl font-bold text-center mb-4 dark:text-gray-100">
+          Login
+        </h2>
 
         <div>
-          <label className="block mb-1 font-medium dark:text-gray-300">Email</label>
+          <label className="block mb-1 font-medium dark:text-gray-300">
+            Email
+          </label>
           <input
             type="email"
             name="email"
@@ -44,7 +56,9 @@ export default function LoginPage({ onLogin }: Props) {
         </div>
 
         <div>
-          <label className="block mb-1 font-medium dark:text-gray-300">Password</label>
+          <label className="block mb-1 font-medium dark:text-gray-300">
+            Password
+          </label>
           <input
             type="password"
             name="password"
