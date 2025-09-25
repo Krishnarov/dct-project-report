@@ -175,7 +175,7 @@ export default function Step1Personal({ onNext }: Props) {
           </label>
           <input
             name="name"
-            placeholder="John Doe"
+            placeholder="Krishna Kumar"
             value={form.name}
             onChange={handleChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -190,7 +190,7 @@ export default function Step1Personal({ onNext }: Props) {
           <input
             name="email"
             type="email"
-            placeholder="john@example.com"
+            placeholder="krishna@gmail.com"
             value={form.email}
             onChange={handleChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -205,7 +205,7 @@ export default function Step1Personal({ onNext }: Props) {
           <input
             name="phone"
             type="tel"
-            placeholder="+91 9876543210"
+            placeholder="10 digit mobile no"
             value={form.phone}
             onChange={handleChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -221,7 +221,7 @@ export default function Step1Personal({ onNext }: Props) {
           <input
             name="enrollmentNumber"
             type="text"
-            placeholder="E1234567890"
+            placeholder="E24480635500058"
             value={form.enrollmentNumber}
             onChange={handleChange}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -246,6 +246,7 @@ export default function Step1Personal({ onNext }: Props) {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Certificate Image
+             <span className="text-red-500">*</span>
             <span
               className="pl-5 text-xs text-blue-500 underline cursor-pointer "
               onClick={() => openSampleModal()}

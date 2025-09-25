@@ -151,18 +151,26 @@ export default function Step4Assets({ onNext }: Props) {
     const { name, files } = e.target;
 
     if (name === "uiScreenshots" && files) {
+      const newFiles = Array.from(files);
       const newPreviews: string[] = [];
-      Array.from(files).forEach((file) => {
+      newFiles.forEach((file) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           newPreviews.push(reader.result as string);
           if (newPreviews.length === files.length) {
-            setPreviews((prev) => ({ ...prev, uiScreenshots: newPreviews }));
+            setPreviews((prev) => ({ ...prev, uiScreenshots: [...prev.uiScreenshots, ...newPreviews] }));
           }
         };
         reader.readAsDataURL(file);
       });
-      setForm({ ...form, [name]: files });
+       // Form me bhi purane files + naye files append karna hoga
+    const existingFiles = form.uiScreenshots ? Array.from(form.uiScreenshots) : [];
+    const updatedFiles = [...existingFiles, ...newFiles];
+
+    const newFileList = new DataTransfer();
+    updatedFiles.forEach((file) => newFileList.items.add(file));
+
+    setForm((prev) => ({ ...prev, [name]: newFileList.files }));
     } else if (files && files[0]) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -298,7 +306,7 @@ export default function Step4Assets({ onNext }: Props) {
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">
-            Project Code{" "}
+            Project Code <span className="text-red-500">*</span>
             <span
               className="pl-5 text-xs text-blue-500 underline cursor-pointer "
               onClick={() => openSampleModal("code")}

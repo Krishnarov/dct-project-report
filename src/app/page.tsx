@@ -13,10 +13,13 @@ export default function MultiStepForm() {
 
   useEffect(() => {
     let storedUserId = localStorage.getItem("userId");
+    let projectid = localStorage.getItem("projectid");
+
     if (!storedUserId) {
       storedUserId = Math.floor(Math.random() * 10000).toString();
       localStorage.setItem("userId", storedUserId);
     }
+    if (projectid) setProjectId(projectid);
     setUserId(storedUserId);
 
     fetch(`/api/form?userId=${storedUserId}`)
@@ -44,6 +47,7 @@ export default function MultiStepForm() {
         const result = await res.json();
         if (step === 4 && result.form?.projectId) {
           setProjectId(result.form.projectId);
+          localStorage.setItem("projectid", result.form.projectId);
         }
         const nextStep = step + 1;
         setCurrentStep(nextStep);
@@ -60,6 +64,7 @@ export default function MultiStepForm() {
     setCurrentStep(1);
     localStorage.setItem("userId", newUserId);
     localStorage.setItem("currentStep", "1");
+    localStorage.setItem("projectid", "");
   };
 
   if (isLoading) {

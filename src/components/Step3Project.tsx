@@ -33,7 +33,10 @@ export default function Step3Project({ onNext }: Props) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const isFormValid = Object.values(form).every(value => value.trim() !== "");
+  const isFormValid = Object.entries(form)
+  .filter(([key]) => key !== "TeamName") 
+  .every(([_, value]) => value.trim() !== "");
+
 
   return (
     <div className=" mx-auto  ">
@@ -95,15 +98,14 @@ export default function Step3Project({ onNext }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Team Members Name <span className="text-red-500">*</span>
+              Team Members Name 
             </label>
             <input
               name="TeamName"
-              placeholder="John, Amit, Ram (comma separated)"
+              placeholder="Gaurav, Prabhakar, Krishna (comma separated)"
               value={form.TeamName}
               onChange={handleChange}
               className="w-full px-4 py-2.5 border dark:text-white border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              required
             />
           </div>
         </div>
