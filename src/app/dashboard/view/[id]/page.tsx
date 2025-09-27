@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, ChangeEvent } from "react";
 import { ArrowLeft, Eye, Save } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 export default function EditStudentPage() {
   const params = useParams();
   const router = useRouter();
@@ -152,7 +153,7 @@ export default function EditStudentPage() {
       });
 
       const data = await res.json();
-      console.log(data);
+      // console.log(data);
 
       if (field === "collegeLogo") {
         setForm((prev: any) => ({
@@ -240,14 +241,14 @@ export default function EditStudentPage() {
           },
         };
       } else {
-        if(field==="collegeLogo"){
+        if (field === "collegeLogo") {
           return {
-          ...safePrev,
-          collegeInfo: {
-            ...(safePrev.collegeInfo || {}),
-            collegeLogo: null,
-          },
-        };
+            ...safePrev,
+            collegeInfo: {
+              ...(safePrev.collegeInfo || {}),
+              collegeLogo: null,
+            },
+          };
         }
         // Remove single asset (for diagrams)
         return {
@@ -360,14 +361,14 @@ export default function EditStudentPage() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
-        alert("Student updated successfully!");
+        toast.success("Student updated successfully 🚀");
         router.back();
       } else {
-        alert("Failed to update student");
+        toast.error("Failed to update student");
       }
     } catch (err) {
       console.error(err);
-      alert("Error updating student");
+      toast.error("Failed to update student");
     }
   };
 
@@ -377,7 +378,6 @@ export default function EditStudentPage() {
         Loading...
       </div>
     );
-
 
   return (
     <div className="max-w-7xl mx-auto p-5 space-y-6 dark:bg-gray-950">
@@ -1148,7 +1148,7 @@ export default function EditStudentPage() {
       </div>
 
       {/* Save Button */}
-      <div className="sticky bottom-0 bg-white py-4 border-t">
+      <div className="sticky bottom-0 bg-white dark:bg-gray-950 py-4 border-t">
         <div className="flex justify-end gap-5 ">
           <button
             onClick={handleSubmit}

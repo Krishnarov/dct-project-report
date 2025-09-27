@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { useState, ChangeEvent, FormEvent } from "react";
+import toast from "react-hot-toast";
 
 interface Props {
   onLogin: () => void;
@@ -16,17 +17,22 @@ export default function LoginPage({ onLogin }: Props) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await axios.post(`/api/auth/login`, {
-      email: form.email,
-      password: form.password,
-    });
-    console.log(res);
+    try {
+      const res = await axios.post(`/api/auth/login`, {
+        email: form.email,
+        password: form.password,
+      });
+      // console.log(res);
 
-    if (res.data.success) {
-      localStorage.setItem("token", res.data.token);
-      onLogin();
-    } else {
-      alert("Invalid credentials");
+      if (res.data.success) {
+        sessionStorage.setItem("token", res.data.token);
+        onLogin();
+      } else {
+        toast.error("Invalid credentials");
+      }
+    } catch (error :any) {
+      console.log(error);
+      toast.error(error?.response?.data?.message || error?.message ||"Failed to Login");
     }
   };
 

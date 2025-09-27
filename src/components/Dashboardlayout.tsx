@@ -14,8 +14,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    const token = localStorage.getItem("isLoggedIn");
+    const loggedIn = sessionStorage.getItem("isLoggedIn");
+    const token = sessionStorage.getItem("isLoggedIn");
     if (loggedIn !== "true") {
       router.replace("/login"); // agar login nahi hai to redirect
     } else {

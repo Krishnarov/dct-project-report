@@ -169,7 +169,7 @@ const handlePrintIncrement = async () => {
     }
 
     const data = await response.json();
-    console.log('Print count updated:', data.student);
+    // console.log('Print count updated:', data.student);
     return data.student; // Updated student data
   } catch (error) {
     console.error('Error:', error);

@@ -8,7 +8,7 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn");
+    const loggedIn = sessionStorage.getItem("isLoggedIn");
     if (loggedIn === "true") {
       router.replace("/dashboard"); // Agar already login hai to dashboard bhej do
     }
@@ -17,7 +17,7 @@ export default function Login() {
   return (
     <LoginPage
       onLogin={() => {
-        localStorage.setItem("isLoggedIn", "true");
+        sessionStorage.setItem("isLoggedIn", "true");
         router.replace("/dashboard"); // Login ke baad redirect to dashboard
       }}
     />
